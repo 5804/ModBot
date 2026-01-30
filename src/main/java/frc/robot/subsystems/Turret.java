@@ -6,6 +6,7 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -19,6 +20,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 
 public class Turret extends SubsystemBase {
   public TalonFX yawMotor = new TalonFX(51);
@@ -65,8 +67,12 @@ public class Turret extends SubsystemBase {
   public static BooleanSupplier isYawRightAngle(double correctAngle, double currentAngle) {
     return () -> correctAngle == currentAngle;
   }
-
+  double kVel = 10.0;
+  double kAcc = 10.0;
   private final SlewRateLimiter yawLimiter = new SlewRateLimiter(240); // deg/sec
+
+  
+
   private double applyDeadband(double targetDeg) {
     if (Math.abs(targetDeg - lastCommandedYaw) < YAW_DEADBAND_DEG) {
         return lastCommandedYaw;
@@ -87,6 +93,15 @@ public class Turret extends SubsystemBase {
     
     double turretMotorGearRatio = 7.67;
     double targetAngle = turretMotorGearRatio * degToRev(filtered);
+
+    edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints  max = new edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints(kVel, kAcc);
+    TrapezoidProfile limit = new TrapezoidProfile(max);
+    edu.wpi.first.math.trajectory.TrapezoidProfile.State current = new edu.wpi.first.math.trajectory.TrapezoidProfile.State(angleDeg, kVel);
+    edu.wpi.first.math.trajectory.TrapezoidProfile.State targState = new edu.wpi.first.math.trajectory.TrapezoidProfile.State(YAW_DEADBAND_DEG, kVel);
+    double time = limit.timeLeftUntil(0.0);
+    System.out.println("Current position and Veocity: " + limit.calculate(time, current, targState));
+    //pos = limit.calculate(time,current,targState); //I don't know how to fix this as of 1/30
+
     MotionMagicExpoVoltage pos = new MotionMagicExpoVoltage(targetAngle); // as of 1/23/26 7.67 is exactly 1 rotation of turret wheel (not motor)
     return run(() -> { yawMotor.setControl(pos);});
   }
