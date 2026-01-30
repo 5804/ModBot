@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -27,23 +29,27 @@ public class Turret extends SubsystemBase {
 
     // set slot 0 gains
     var slot0Configs = talonFXConfigs.Slot0;
-    slot0Configs.kS = 0.25; // Add 0.25 V output to overcome static friction
-    slot0Configs.kV = 0.12; // A velocity target of 1 rps results in 0.12 V output
-    slot0Configs.kA = 0.01; // An acceleration of 1 rps/s requires 0.01 V output
-    slot0Configs.kP = 4.8; // A position error of 2.5 rotations results in 12 V output
-    slot0Configs.kI = 0; // no output for integrated error
-    slot0Configs.kD = 0.1; // A velocity error of 1 rps results in 0.1 V output
+
+    slot0Configs.kP = 0.5;
+    slot0Configs.kI = 0.0;
+    slot0Configs.kD = 0.1;
+
+    slot0Configs.kS = 0.2;
+    slot0Configs.kV = 0.117 / (2 * Math.PI);
+    slot0Configs.kA = 0;
 
     // set Motion Magic settings
     var motionMagicConfigs = talonFXConfigs.MotionMagic;
-    motionMagicConfigs.MotionMagicCruiseVelocity = 1; // Target cruise velocity of 80 rps
-    motionMagicConfigs.MotionMagicAcceleration = 160; // Target acceleration of 160 rps/s (0.5 seconds)
-    motionMagicConfigs.MotionMagicJerk = 1600; // Target jerk of 1600 rps/s/s (0.1 seconds)
+    motionMagicConfigs.MotionMagicCruiseVelocity = 1000; // Target cruise velocity of 80 rps
+    motionMagicConfigs.MotionMagicAcceleration = 1000; // Target acceleration of 160 rps/s (0.5 seconds)
+    motionMagicConfigs.MotionMagicJerk = 10000; // Target jerk of 1600 rps/s/s (0.1 seconds)
 
     yawMotor.getConfigurator().apply(talonFXConfigs);
   }
 
   final MotionMagicVoltage motionMagicRequest = new MotionMagicVoltage(0);
+  private static final double YAW_DEADBAND_DEG = 0;
+  private double lastCommandedYaw = 0.0;
 
   public double revToDeg(double rev) {
     return rev * 360;
@@ -52,20 +58,44 @@ public class Turret extends SubsystemBase {
     return deg / 360;
   }
 
-  public double getYaw() {
+  public double getTurretYaw() {
     double yawPosition = yawMotor.getPosition(false).getValueAsDouble();
     return revToDeg(yawPosition);
   }
   public static BooleanSupplier isYawRightAngle(double correctAngle, double currentAngle) {
     return () -> correctAngle == currentAngle;
   }
-  public Command setYaw(/*double angle */) { // Angle in degrees in respect to pointing towards front of the robot
-    //double correctAngle = degToRev(angle * (135/18));
-    //return run(() -> { yawMotor.setPosition(0.7); });
-    MotionMagicExpoVoltage pos = new MotionMagicExpoVoltage(7.67); // as of 1/23/26 7.67 is exactly 1 rotation of turret wheel (not motor)
-    return run(() -> { yawMotor.setControl(pos);});
-  
+
+  private final SlewRateLimiter yawLimiter = new SlewRateLimiter(240); // deg/sec
+  private double applyDeadband(double targetDeg) {
+    if (Math.abs(targetDeg - lastCommandedYaw) < YAW_DEADBAND_DEG) {
+        return lastCommandedYaw;
+    }
+    lastCommandedYaw = targetDeg;
+    return targetDeg;
   }
+  private double normalizeAngle(double deg) {
+    return MathUtil.inputModulus(deg, -180.0, 180.0);
+  }
+
+
+
+  public Command setYawCommand(double angleDeg) { // Angle in degrees in respect to pointing towards front of the robot
+    double normalized = normalizeAngle(angleDeg);
+    //double smoothed = yawLimiter.calculate(normalized);
+    double filtered = applyDeadband(normalized);
+    
+    double turretMotorGearRatio = 7.67;
+    double targetAngle = turretMotorGearRatio * degToRev(filtered);
+    MotionMagicExpoVoltage pos = new MotionMagicExpoVoltage(targetAngle); // as of 1/23/26 7.67 is exactly 1 rotation of turret wheel (not motor)
+    return run(() -> { yawMotor.setControl(pos);});
+  }
+
+  public void setYaw(double angleDeg) {
+    double turretMotorGearRatio = 7.67;
+    double targetAngle = turretMotorGearRatio * degToRev(angleDeg);
+    yawMotor.setControl(new MotionMagicExpoVoltage(targetAngle));
+}
 
   @Override
   public void periodic() {

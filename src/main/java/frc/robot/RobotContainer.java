@@ -13,6 +13,7 @@ import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.Odometry;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -48,6 +49,10 @@ public class RobotContainer {
     public final Turret turret = new Turret();
     private final SendableChooser<Command> autoChooser = new SendableChooser<>();
         private ShuffleboardTab tab1 = Shuffleboard.getTab("Tab1");
+        
+    public double getOdometryRotation() {
+        return drivetrain.getState().Pose.getRotation().getDegrees();
+    }
 
     public RobotContainer() {
         configureBindings();
@@ -92,9 +97,11 @@ public class RobotContainer {
         // Reset the field-centric heading on left bumper press.
         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-        // joystick.a().onTrue(turret.setYaw(180));
-        // joystick.b().onTrue(turret.setYaw(0));
-        joystick.a().onTrue(turret.setYaw(0));
+        joystick.a().onTrue(turret.setYawCommand(180));
+        joystick.x().onTrue(turret.setYawCommand(90));
+        joystick.b().onTrue(turret.setYawCommand(-90));
+        joystick.y().onTrue(turret.setYawCommand(0));
+        joystick.povUp().whileTrue(Commands.run(() -> turret.setYaw(-getOdometryRotation()), turret));
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }

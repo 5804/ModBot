@@ -26,11 +26,12 @@ public class Robot extends TimedRobot {
         m_robotContainer = new RobotContainer();
         CanBridge.runTCP();
     }
-
+    
     @Override
     public void robotPeriodic() {
         m_timeAndJoystickReplay.update();
         CommandScheduler.getInstance().run(); 
+        System.out.println(m_robotContainer.getOdometryRotation());
     }
 
     @Override
