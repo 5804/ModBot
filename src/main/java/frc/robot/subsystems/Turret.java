@@ -80,11 +80,11 @@ public class Turret extends SubsystemBase {
         double turretYawOffsetRad = Math.atan2(robotOffsetY, robotOffsetX);
         double turretYawOffsetDeg = Math.toDegrees(turretYawOffsetRad);
         double motorYawOffset = turretYawOffsetDeg; 
-         System.out.println("Motor:" + motorYawOffset);
-         System.out.println("X: " + robotOffsetX);
-         System.out.println("Y: " + robotOffsetY);
+        System.out.println("Motor:" + motorYawOffset);
+        System.out.println("X: " + robotOffsetX);
+        System.out.println("Y: " + robotOffsetY);
 
-        return motorYawOffset;
+      return motorYawOffset;
     }
 
   public static BooleanSupplier isYawRightAngle(double correctAngle, double currentAngle) {

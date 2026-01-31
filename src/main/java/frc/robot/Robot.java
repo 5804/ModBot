@@ -9,6 +9,8 @@ import com.ctre.phoenix6.HootAutoReplay;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.subsystems.Turret;
 import au.grapplerobotics.CanBridge;
 
 
@@ -16,6 +18,7 @@ public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
 
     private final RobotContainer m_robotContainer;
+    private final Turret m_turret = new Turret();
 
     /* log and replay timestamp and joystick data */
     private final HootAutoReplay m_timeAndJoystickReplay = new HootAutoReplay()
@@ -31,8 +34,7 @@ public class Robot extends TimedRobot {
     public void robotPeriodic() {
         m_timeAndJoystickReplay.update();
         CommandScheduler.getInstance().run(); 
-        //System.out.println(m_robotContainer.getOdometryRotation());
-        //System.out.println(m_turret.getCacu)
+        System.out.println(m_robotContainer.getOdometryRotation());
     }
 
     @Override
@@ -68,7 +70,11 @@ public class Robot extends TimedRobot {
     }
 
     @Override
-    public void teleopPeriodic() {}
+    public void teleopPeriodic() {
+        if (m_robotContainer.turretAutoLock) {
+            m_turret.setYaw(-(m_robotContainer.getOdometryRotation()) + m_turret.getMotorYawOffset(m_robotContainer.getOdometryX(), m_robotContainer.getOdometryY()));
+        }
+    }
 
     @Override
     public void teleopExit() {}

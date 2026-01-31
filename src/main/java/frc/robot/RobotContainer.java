@@ -33,6 +33,7 @@ public class RobotContainer {
     private double maxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
     private double driveDeadband = 0.14;
     private double angleDeadband = 0.14;
+    public boolean turretAutoLock = false;
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -56,33 +57,18 @@ public class RobotContainer {
 
     public double getOdometryX() {
         return drivetrain.getState().Pose.getX();
-    }
+     }
 
     public double getOdometryY() {
         return drivetrain.getState().Pose.getY();
     }
 
-    // public double getMotorYawOffset() {
-
-    //     final double pointTowardsX = 300.0; // The position of where the robot will point towards (meters)
-    //     final double pointTowardsY = 3.0;
-
-    //     double robotOffsetX = pointTowardsX - getOdometryX();
-    //     double robotOffsetY = pointTowardsY - getOdometryY();
-
-    //     double turretYawOffsetRad = (Math.PI/2) - Math.atan2(robotOffsetY, robotOffsetX);
-    //     double turretYawOffsetDeg = Math.toDegrees(turretYawOffsetRad);
-    //     double motorYawOffset = (turretYawOffsetDeg / 360) * 7.67; 
-    //      System.out.println("Motor:" + motorYawOffset);
-    //      System.out.println("X: " + robotOffsetX);
-
-    //      System.out.println("Y: " + robotOffsetX);
-
-         
-
-    //     return motorYawOffset;
-    // }
-
+    public Command enableTurretAutoLock() {
+        return Commands.runOnce(() -> { turretAutoLock = true; });
+    }
+    public Command disableTurretAutoLock() {
+        return Commands.runOnce(() -> { turretAutoLock = false; });
+    }
 
     public RobotContainer() {
         configureBindings();
@@ -131,7 +117,8 @@ public class RobotContainer {
         joystick.x().onTrue(turret.setYawCommand(90));
         joystick.b().onTrue(turret.setYawCommand(-90));
         joystick.y().onTrue(turret.setYawCommand(0));
-        joystick.povUp().whileTrue((Commands.run(() -> turret.setYaw(-(getOdometryRotation()) + turret.getMotorYawOffset(getOdometryX(), getOdometryY())), turret)));
+        joystick.povUp().onTrue(enableTurretAutoLock());
+        joystick.povDown().onTrue(disableTurretAutoLock());
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }
