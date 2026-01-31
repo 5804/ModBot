@@ -32,9 +32,9 @@ public class Turret extends SubsystemBase {
     // set slot 0 gains
     var slot0Configs = talonFXConfigs.Slot0;
 
-    slot0Configs.kP = 0.5;
-    slot0Configs.kI = 0.0;
-    slot0Configs.kD = 0.1;
+    slot0Configs.kP = 4;
+    slot0Configs.kI = 0;
+    slot0Configs.kD = 0.2;
 
     slot0Configs.kS = 0.2;
     slot0Configs.kV = 0.117 / (2 * Math.PI);
@@ -42,12 +42,14 @@ public class Turret extends SubsystemBase {
 
     // set Motion Magic settings
     var motionMagicConfigs = talonFXConfigs.MotionMagic;
-    motionMagicConfigs.MotionMagicCruiseVelocity = 1000; // Target cruise velocity of 80 rps
-    motionMagicConfigs.MotionMagicAcceleration = 1000; // Target acceleration of 160 rps/s (0.5 seconds)
-    motionMagicConfigs.MotionMagicJerk = 10000; // Target jerk of 1600 rps/s/s (0.1 seconds)
+    motionMagicConfigs.MotionMagicCruiseVelocity = 0; // Target cruise velocity of 80 rps
+    //motionMagicConfigs.MotionMagicAcceleration = 1000; // Target acceleration of 160 rps/s (0.5 seconds)
+    //motionMagicConfigs.MotionMagicJerk = 10000; // Target jerk of 1600 rps/s/s (0.1 seconds)
 
     yawMotor.getConfigurator().apply(talonFXConfigs);
   }
+
+  
 
   final MotionMagicVoltage motionMagicRequest = new MotionMagicVoltage(0);
   private static final double YAW_DEADBAND_DEG = 0;
@@ -64,12 +66,33 @@ public class Turret extends SubsystemBase {
     double yawPosition = yawMotor.getPosition(false).getValueAsDouble();
     return revToDeg(yawPosition);
   }
+
+  final double pointTowardsX = 1; // The position of where the robot will point towards (meters)
+  final double pointTowardsY = 0;
+
+  public double getMotorYawOffset(double odometryX, double odometryY) {
+        System.out.println("OdometryX: " + odometryX);
+        System.out.println("OdometryY: " + odometryY);
+
+        double robotOffsetX = pointTowardsX - odometryX;
+        double robotOffsetY = pointTowardsY - odometryY;
+
+        double turretYawOffsetRad = Math.atan2(robotOffsetY, robotOffsetX);
+        double turretYawOffsetDeg = Math.toDegrees(turretYawOffsetRad);
+        double motorYawOffset = turretYawOffsetDeg; 
+         System.out.println("Motor:" + motorYawOffset);
+         System.out.println("X: " + robotOffsetX);
+         System.out.println("Y: " + robotOffsetY);
+
+        return motorYawOffset;
+    }
+
   public static BooleanSupplier isYawRightAngle(double correctAngle, double currentAngle) {
     return () -> correctAngle == currentAngle;
   }
-  double kVel = 10.0;
-  double kAcc = 10.0;
-  private final SlewRateLimiter yawLimiter = new SlewRateLimiter(240); // deg/sec
+  // double kVel = 10.0;
+  // double kAcc = 10.0;
+  // private final SlewRateLimiter yawLimiter = new SlewRateLimiter(240); // deg/sec
 
   
 
@@ -86,30 +109,33 @@ public class Turret extends SubsystemBase {
 
 
 
-  public Command setYawCommand(double angleDeg) { // Angle in degrees in respect to pointing towards front of the robot
+  public void setYaw(double angleDeg) { // Angle in degrees in respect to pointing towards front of the robot
     double normalized = normalizeAngle(angleDeg);
     //double smoothed = yawLimiter.calculate(normalized);
-    double filtered = applyDeadband(normalized);
+    // double filtered = applyDeadband(normalized);
     
-    double turretMotorGearRatio = 7.67;
-    double targetAngle = turretMotorGearRatio * degToRev(filtered);
+    double turretMotorGearRatio = 7.67; // as of 1/23/26 7.67 is exactly 1 rotation of turret wheel (not motor)
+    double targetAngle = turretMotorGearRatio * degToRev(normalized);
 
-    edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints  max = new edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints(kVel, kAcc);
-    TrapezoidProfile limit = new TrapezoidProfile(max);
-    edu.wpi.first.math.trajectory.TrapezoidProfile.State current = new edu.wpi.first.math.trajectory.TrapezoidProfile.State(angleDeg, kVel);
-    edu.wpi.first.math.trajectory.TrapezoidProfile.State targState = new edu.wpi.first.math.trajectory.TrapezoidProfile.State(YAW_DEADBAND_DEG, kVel);
-    double time = limit.timeLeftUntil(0.0);
-    System.out.println("Current position and Veocity: " + limit.calculate(time, current, targState));
+    // edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints  max = new edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints(kVel, kAcc);
+    // TrapezoidProfile limit = new TrapezoidProfile(max);
+    // edu.wpi.first.math.trajectory.TrapezoidProfile.State current = new edu.wpi.first.math.trajectory.TrapezoidProfile.State(angleDeg, kVel);
+    // edu.wpi.first.math.trajectory.TrapezoidProfile.State targState = new edu.wpi.first.math.trajectory.TrapezoidProfile.State(targetAngle, kVel);
+    // double time = limit.timeLeftUntil(0.0);
+    // System.out.println("Current position and Veocity: " + limit.calculate(time, current, targState));
+
+
     //pos = limit.calculate(time,current,targState); //I don't know how to fix this as of 1/30
-
-    MotionMagicExpoVoltage pos = new MotionMagicExpoVoltage(targetAngle); // as of 1/23/26 7.67 is exactly 1 rotation of turret wheel (not motor)
-    return run(() -> { yawMotor.setControl(pos);});
+ 
+    yawMotor.setControl(new MotionMagicExpoVoltage(targetAngle));
+    
   }
 
-  public void setYaw(double angleDeg) {
+  public Command setYawCommand(double angleDeg) {
     double turretMotorGearRatio = 7.67;
     double targetAngle = turretMotorGearRatio * degToRev(angleDeg);
-    yawMotor.setControl(new MotionMagicExpoVoltage(targetAngle));
+    
+    return run(() -> { yawMotor.setControl(new MotionMagicExpoVoltage(targetAngle));});
 }
 
   @Override

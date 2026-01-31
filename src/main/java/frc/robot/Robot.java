@@ -31,7 +31,8 @@ public class Robot extends TimedRobot {
     public void robotPeriodic() {
         m_timeAndJoystickReplay.update();
         CommandScheduler.getInstance().run(); 
-        System.out.println(m_robotContainer.getOdometryRotation());
+        //System.out.println(m_robotContainer.getOdometryRotation());
+        //System.out.println(m_turret.getCacu)
     }
 
     @Override

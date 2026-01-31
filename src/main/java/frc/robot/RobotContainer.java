@@ -54,6 +54,36 @@ public class RobotContainer {
         return drivetrain.getState().Pose.getRotation().getDegrees();
     }
 
+    public double getOdometryX() {
+        return drivetrain.getState().Pose.getX();
+    }
+
+    public double getOdometryY() {
+        return drivetrain.getState().Pose.getY();
+    }
+
+    // public double getMotorYawOffset() {
+
+    //     final double pointTowardsX = 300.0; // The position of where the robot will point towards (meters)
+    //     final double pointTowardsY = 3.0;
+
+    //     double robotOffsetX = pointTowardsX - getOdometryX();
+    //     double robotOffsetY = pointTowardsY - getOdometryY();
+
+    //     double turretYawOffsetRad = (Math.PI/2) - Math.atan2(robotOffsetY, robotOffsetX);
+    //     double turretYawOffsetDeg = Math.toDegrees(turretYawOffsetRad);
+    //     double motorYawOffset = (turretYawOffsetDeg / 360) * 7.67; 
+    //      System.out.println("Motor:" + motorYawOffset);
+    //      System.out.println("X: " + robotOffsetX);
+
+    //      System.out.println("Y: " + robotOffsetX);
+
+         
+
+    //     return motorYawOffset;
+    // }
+
+
     public RobotContainer() {
         configureBindings();
 
@@ -101,7 +131,7 @@ public class RobotContainer {
         joystick.x().onTrue(turret.setYawCommand(90));
         joystick.b().onTrue(turret.setYawCommand(-90));
         joystick.y().onTrue(turret.setYawCommand(0));
-        joystick.povUp().whileTrue(Commands.run(() -> turret.setYaw(-getOdometryRotation()), turret));
+        joystick.povUp().whileTrue((Commands.run(() -> turret.setYaw(-(getOdometryRotation()) + turret.getMotorYawOffset(getOdometryX(), getOdometryY())), turret)));
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }
