@@ -28,8 +28,11 @@ import java.util.Optional;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.VisionSubsystem;
 
 public class RobotContainer {
+
+
     private double maxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double maxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
     private double driveDeadband = 0.14;
@@ -48,7 +51,9 @@ public class RobotContainer {
 
     private final CommandXboxController joystick = new CommandXboxController(0);
 
-    public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    public static final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    public static final VisionSubsystem m_VisionSubsystem = new VisionSubsystem();
+
     private final SendableChooser<Command> autoChooser = new SendableChooser<>();
         private ShuffleboardTab tab1 = Shuffleboard.getTab("Tab1");
 
@@ -105,6 +110,10 @@ public class RobotContainer {
 
     public Command getAutonomousCommand() {
         return autoChooser.getSelected();
+    }
+
+    public CommandSwerveDrivetrain getDrivetrain(){
+        return this.drivetrain;
     }
 
     public Command oneMeterAuto() {

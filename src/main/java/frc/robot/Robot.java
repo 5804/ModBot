@@ -20,7 +20,6 @@ public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
 
     private final RobotContainer m_robotContainer;
-    private final VisionSubsystem m_VisionSubsystem;
 
     /* log and replay timestamp and joystick data */
     private final HootAutoReplay m_timeAndJoystickReplay = new HootAutoReplay()
@@ -29,7 +28,6 @@ public class Robot extends TimedRobot {
 
     public Robot() {
         m_robotContainer = new RobotContainer();
-        m_VisionSubsystem = new VisionSubsystem();
 
         CanBridge.runTCP();
     }
@@ -74,10 +72,11 @@ public class Robot extends TimedRobot {
 
     @Override
     public void teleopPeriodic() {
-        Pose2d visionEstimatedPose = m_VisionSubsystem.getEstimatedRobotPosition();
-        SmartDashboard.putNumber("Vision Odometry X", visionEstimatedPose.getX());
-        SmartDashboard.putNumber("Vision Odometry Y", visionEstimatedPose.getY());
-        SmartDashboard.putNumber("Vision Odometry Angle", visionEstimatedPose.getRotation().getDegrees());
+        // Pose2d visionEstimatedPose = RobotContainer.m_VisionSubsystem.getEstimatedRobotPosition();
+        // SmartDashboard.putNumber("Vision Odometry X", visionEstimatedPose.getX());
+        // SmartDashboard.putNumber("Vision Odometry Y", visionEstimatedPose.getY());
+        // SmartDashboard.putNumber("Vision Odometry Angle", visionEstimatedPose.getRotation().getDegrees());
+        SmartDashboard.putNumber("TX: ", LimelightHelpers.getTX("limelight-one"));
     }
 
     @Override

@@ -9,6 +9,7 @@ import java.lang.reflect.Array;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.DifferentialDrivePoseEstimator;
+import edu.wpi.first.math.estimator.PoseEstimator;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -24,22 +25,32 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 public class VisionSubsystem extends SubsystemBase {
   /** Creates a new VisionSubsystem. */
-  public VisionSubsystem() {
-    LimelightHelpers.setCameraPose_RobotSpace("200", 0.325, 0.535, 0.405, 0, 0, 0); // Camera 200
-    LimelightHelpers.setCameraPose_RobotSpace("201", -0.24, 0.535, 0.405, 0, 0, 90); // Camera 201
-    LimelightHelpers.setCameraPose_RobotSpace("202", -0.325, -0.115, 0.405, 0, 0, 180); // Camera 202
-    LimelightHelpers.setCameraPose_RobotSpace("203", 0.24, -0.115, 0.405, 0, 0, -90); // Camera 203
+  public SwerveDrivePoseEstimator poseEstimator;
 
-    LimelightHelpers.setPipelineIndex("200", 0);
-    LimelightHelpers.setPipelineIndex("201", 0);
-    LimelightHelpers.setPipelineIndex("202", 0);
-    LimelightHelpers.setPipelineIndex("203", 0);
+  public VisionSubsystem() {
+    // LimelightHelpers.setCameraPose_RobotSpace("200", 0.325, 0.535, 0.405, 0, 0, 0); // Camera 200
+    LimelightHelpers.setCameraPose_RobotSpace("one", -0.24, 0.535, 0.405, 0, 0, 90); // Camera 201
+    // LimelightHelpers.setCameraPose_RobotSpace("202", -0.325, -0.115, 0.405, 0, 0, 180); // Camera 202
+    // LimelightHelpers.setCameraPose_RobotSpace("203", 0.24, -0.115, 0.405, 0, 0, -90); // Camera 203
+
+    // LimelightHelpers.setPipelineIndex("200", 0);
+    LimelightHelpers.setPipelineIndex("one", 0);
+    // LimelightHelpers.setPipelineIndex("202", 0);
+    // LimelightHelpers.setPipelineIndex("203", 0);
+
+    Path aprilTagFieldLayoutFilePath = Path.of("/home/lvuser/deploy/aprilTag/N108.json");
+
+    try {
+      this.aprilTagLayout = new AprilTagFieldLayout(aprilTagFieldLayoutFilePath);
+    } catch (Exception e){
+      System.out.println("FILE LOAD FAILED!");
+    }
+    
+    this.poseEstimator = RobotContainer.drivetrain.m_poseEstimator;
   }
 
-  // Path aprilTagFieldLayoutFilePath = Path.of("/src/main/aprilTag/N108.json/");
-  // AprilTagFieldLayout aprilTagLayout = new AprilTagFieldLayout(aprilTagFieldLayoutFilePath);
+  AprilTagFieldLayout aprilTagLayout;
 
-  public SwerveDrivePoseEstimator poseEstimator = CommandSwerveDrivetrain.m_poseEstimator;
 
   SwerveModulePosition[] swerveModulePositions = new SwerveModulePosition[] {
             DriveSubsystem.m_frontLeft.getPosition(),
@@ -50,12 +61,11 @@ public class VisionSubsystem extends SubsystemBase {
 
   private static final String[] LIMELIGHTS = {"200", "201", "202", "203"};
 
-
   @Override
   public void periodic() {
-    for (String name : LIMELIGHTS) {
-      LimelightHelpers.SetRobotOrientation(name, poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-      LimelightHelpers.PoseEstimate poseEstimate = LimelightHelpers.getBotPoseEstimate_wpiRed_MegaTag2(name);
+    // for (String name : LIMELIGHTS) {
+      LimelightHelpers.SetRobotOrientation("one", poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+      LimelightHelpers.PoseEstimate poseEstimate = LimelightHelpers.getBotPoseEstimate_wpiRed_MegaTag2("one");
       // if our angular velocity is greater than 360 degrees per second, ignore vision updates
       boolean doRejectUpdate = false;
       if(Math.abs(DriveSubsystem.m_gyro.getRate()) > 360)
@@ -73,7 +83,8 @@ public class VisionSubsystem extends SubsystemBase {
             poseEstimate.pose,
             poseEstimate.timestampSeconds);
       }
-    }
+    // }
+
   }
 
   public Pose2d getEstimatedRobotPosition() {
