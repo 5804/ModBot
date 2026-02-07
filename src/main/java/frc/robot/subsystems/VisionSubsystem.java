@@ -26,15 +26,16 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 public class VisionSubsystem extends SubsystemBase {
   /** Creates a new VisionSubsystem. */
   public SwerveDrivePoseEstimator poseEstimator;
+  String limelightName201 = "one";
 
   public VisionSubsystem() {
     // LimelightHelpers.setCameraPose_RobotSpace("200", 0.325, 0.535, 0.405, 0, 0, 0); // Camera 200
-    LimelightHelpers.setCameraPose_RobotSpace("one", -0.24, 0.535, 0.405, 0, 0, 90); // Camera 201
+    LimelightHelpers.setCameraPose_RobotSpace(limelightName201, -0.24, 0.535, 0.405, 0, 0, 90); // Camera 201
     // LimelightHelpers.setCameraPose_RobotSpace("202", -0.325, -0.115, 0.405, 0, 0, 180); // Camera 202
     // LimelightHelpers.setCameraPose_RobotSpace("203", 0.24, -0.115, 0.405, 0, 0, -90); // Camera 203
 
     // LimelightHelpers.setPipelineIndex("200", 0);
-    LimelightHelpers.setPipelineIndex("one", 0);
+    LimelightHelpers.setPipelineIndex(limelightName201, 0);
     // LimelightHelpers.setPipelineIndex("202", 0);
     // LimelightHelpers.setPipelineIndex("203", 0);
 
@@ -64,8 +65,8 @@ public class VisionSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // for (String name : LIMELIGHTS) {
-      LimelightHelpers.SetRobotOrientation("one", poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-      LimelightHelpers.PoseEstimate poseEstimate = LimelightHelpers.getBotPoseEstimate_wpiRed_MegaTag2("one");
+      LimelightHelpers.SetRobotOrientation(limelightName201, poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+      LimelightHelpers.PoseEstimate poseEstimate = LimelightHelpers.getBotPoseEstimate_wpiRed_MegaTag2(limelightName201);
       // if our angular velocity is greater than 360 degrees per second, ignore vision updates
       boolean doRejectUpdate = false;
       if(Math.abs(DriveSubsystem.m_gyro.getRate()) > 360)

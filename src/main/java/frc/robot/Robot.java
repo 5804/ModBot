@@ -76,7 +76,7 @@ public class Robot extends TimedRobot {
         // SmartDashboard.putNumber("Vision Odometry X", visionEstimatedPose.getX());
         // SmartDashboard.putNumber("Vision Odometry Y", visionEstimatedPose.getY());
         // SmartDashboard.putNumber("Vision Odometry Angle", visionEstimatedPose.getRotation().getDegrees());
-        SmartDashboard.putNumber("TX: ", LimelightHelpers.getTX("limelight-one"));
+        SmartDashboard.putNumber("Target Count: ", LimelightHelpers.getTargetCount("one"));
     }
 
     @Override
