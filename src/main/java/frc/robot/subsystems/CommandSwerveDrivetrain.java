@@ -17,6 +17,7 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -34,6 +35,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.Constants;
+import frc.robot.LimelightHelpers;
 import frc.robot.subsystems.DriveSubsystem;
 
 /**
@@ -303,6 +305,32 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SmartDashboard.putNumber("Odometry X", getState().Pose.getX());
         SmartDashboard.putNumber("Odometry Y", getState().Pose.getY());
         SmartDashboard.putNumber("Angle", getState().Pose.getRotation().getDegrees());
+
+        LimelightHelpers.SetRobotOrientation("limelight-front", m_poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+        LimelightHelpers.PoseEstimate poseEstimate = LimelightHelpers.getBotPoseEstimate_wpiRed_MegaTag2("limelight-front");
+        // if our angular velocity is greater than 360 degrees per second, ignore vision updates
+        boolean doRejectUpdate = false;
+        if(Math.abs(DriveSubsystem.m_gyro.getRate()) > 360)
+        {
+            doRejectUpdate = true;
+        }
+        if(poseEstimate.tagCount == 0)
+        {
+            doRejectUpdate = true;
+        }
+        if(!doRejectUpdate)
+        {
+            m_poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.7,.7,9999999));
+            m_poseEstimator.addVisionMeasurement(
+                poseEstimate.pose,
+                poseEstimate.timestampSeconds);
+            
+        }
+        System.out.println("x: "+poseEstimate.pose.getX());
+            System.out.println("y: "+poseEstimate.pose.getY());
+            System.out.println("r: "+poseEstimate.pose.getRotation().getDegrees());
+            System.out.println(poseEstimate.tagCount);
+        
     }
 
     private void startSimThread() {

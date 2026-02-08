@@ -6,15 +6,11 @@ package frc.robot;
 
 import com.ctre.phoenix6.HootAutoReplay;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import au.grapplerobotics.CanBridge;
-
-import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.VisionSubsystem;
 
 public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
@@ -72,23 +68,27 @@ public class Robot extends TimedRobot {
 
     @Override
     public void teleopPeriodic() {
-        // Pose2d visionEstimatedPose = RobotContainer.m_VisionSubsystem.getEstimatedRobotPosition();
-        // SmartDashboard.putNumber("Vision Odometry X", visionEstimatedPose.getX());
-        // SmartDashboard.putNumber("Vision Odometry Y", visionEstimatedPose.getY());
-        // SmartDashboard.putNumber("Vision Odometry Angle", visionEstimatedPose.getRotation().getDegrees());
-        SmartDashboard.putNumber("Target Count: ", LimelightHelpers.getTargetCount("one"));
     }
 
     @Override
     public void teleopExit() {}
+
 
     @Override
     public void testInit() {
         CommandScheduler.getInstance().cancelAll();
     }
 
+    int testI = 1;
+
     @Override
-    public void testPeriodic() {}
+    public void testPeriodic() {
+        testI++;
+        if (testI >= 500) {
+            m_robotContainer.printLimeLightData();
+            testI = 1;
+        }
+    }
 
     @Override
     public void testExit() {}
