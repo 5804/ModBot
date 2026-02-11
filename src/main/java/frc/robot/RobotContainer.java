@@ -14,6 +14,7 @@ import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -65,19 +66,23 @@ public class RobotContainer {
         autoChooser.addOption("Swerve Test", swerveTestAuto());
         autoChooser.addOption("Vision Test", visionTestAuto());
 
+        autoChooser.addOption("singlePos", singlePos());
+
+
 
         SmartDashboard.putData("Auto choices", autoChooser);
         tab1.add("Auto Chooser", autoChooser);
 
-        LimelightHelpers.setCameraPose_RobotSpace("limelight-front", 0.2346, 0.3201, 0.405, 0, 0, 0);
+        LimelightHelpers.setCameraPose_RobotSpace("limelight-right", 0.24, -0.32, 0.41, 0, 0, 0);
         // LimelightHelpers.setCameraPose_RobotSpace("limelight-left", -0.24, 0.535, 0.405, 0, 0, 90); // Camera 201
         //LimelightHelpers.setCameraPose_RobotSpace("limelight-back", -0.2346, -0.3201, 0.405, 0, 0, 180);
         // LimelightHelpers.setCameraPose_RobotSpace("203", 0.24, -0.115, 0.405, 0, 0, -90); // Camera 203
 
-        LimelightHelpers.setPipelineIndex("limelight-front", 0);
+        LimelightHelpers.setPipelineIndex("limelight-right", 0);
         // LimelightHelpers.setPipelineIndex("limelight-left", 0);
         // LimelightHelpers.setPipelineIndex("limelight-back", 0);
         // LimelightHelpers.setPipelineIndex("203", 0);
+        // CommandSwerveDrivetrain.m_poseEstimator.resetPose(new Pose2d(2, 0, new Rotation2d(Math.PI/2)));
     }
 
     private void configureBindings() {
@@ -123,7 +128,7 @@ public class RobotContainer {
 
         // tx ranges from (-hfov/2) to (hfov/2) in degrees. If your target is on the rightmost edge of 
         // your limelight 3 feed, tx should return roughly 31 degrees.
-        double targetingAngularVelocity = LimelightHelpers.getTX("limelight-front") * kP;
+        double targetingAngularVelocity = LimelightHelpers.getTX("limelight-right") * kP;
 
         // convert to radians per second for our drive method
         targetingAngularVelocity *= maxAngularRate;
@@ -140,14 +145,14 @@ public class RobotContainer {
     double limelight_range_proportional()
     {    
         double kP = .1;
-        double targetingForwardSpeed = LimelightHelpers.getTA("limelight-front") * kP;
+        double targetingForwardSpeed = LimelightHelpers.getTA("limelight-right") * kP;
         targetingForwardSpeed *= maxSpeed;
         // targetingForwardSpeed *= -1.0;
         return targetingForwardSpeed;
     }
 
     private Command orientToAprilTag() {
-        String limelightName = "limelight-front";
+        String limelightName = "limelight-right";
 
         double calc_x = limelight_range_proportional();
         double calc_y = MathUtil.applyDeadband(joystick.getLeftX(), driveDeadband) * -1 * maxSpeed;
@@ -163,7 +168,7 @@ public class RobotContainer {
     }
 
     public void printLimeLightData() {
-        String limelightName = "limelight-front";
+        String limelightName = "limelight-right";
         double tx = LimelightHelpers.getTX(limelightName);
         double ty = LimelightHelpers.getTY(limelightName);
         double ta = LimelightHelpers.getTA(limelightName);
@@ -192,5 +197,9 @@ public class RobotContainer {
     }
     public Command visionTestAuto() {
         return new PathPlannerAuto("VisionTestAuto");
+    }
+
+    public Command singlePos() {
+        return new PathPlannerAuto("singlePos");
     }
 }

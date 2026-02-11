@@ -306,8 +306,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SmartDashboard.putNumber("Odometry Y", getState().Pose.getY());
         SmartDashboard.putNumber("Angle", getState().Pose.getRotation().getDegrees());
 
-        LimelightHelpers.SetRobotOrientation("limelight-front", m_poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-        LimelightHelpers.PoseEstimate poseEstimate = LimelightHelpers.getBotPoseEstimate_wpiRed_MegaTag2("limelight-front");
+        LimelightHelpers.SetRobotOrientation("limelight-right", m_poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+        LimelightHelpers.PoseEstimate poseEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-right");
+        SmartDashboard.putNumber("TX", LimelightHelpers.getTX("limelight-right"));
         // if our angular velocity is greater than 360 degrees per second, ignore vision updates
         boolean doRejectUpdate = false;
         if(Math.abs(DriveSubsystem.m_gyro.getRate()) > 360)
@@ -330,7 +331,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             System.out.println("y: "+poseEstimate.pose.getY());
             System.out.println("r: "+poseEstimate.pose.getRotation().getDegrees());
             System.out.println(poseEstimate.tagCount);
-        
+        SmartDashboard.putNumber("Estimated x", poseEstimate.pose.getX());
+        SmartDashboard.putNumber("Estimated y", poseEstimate.pose.getY());
+        SmartDashboard.putNumber("Estimated rotation", poseEstimate.pose.getRotation().getDegrees());
+        SmartDashboard.putNumber("Estimated tag count", poseEstimate.tagCount);
     }
 
     private void startSimThread() {
