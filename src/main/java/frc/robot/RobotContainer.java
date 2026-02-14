@@ -73,7 +73,11 @@ public class RobotContainer {
         SmartDashboard.putData("Auto choices", autoChooser);
         tab1.add("Auto Chooser", autoChooser);
 
-        LimelightHelpers.setCameraPose_RobotSpace("limelight-right", 0.24, -0.32, 0.41, 0, 0, 0);
+        // LimelightHelpers.setCameraPose_RobotSpace("limelight-right", -0.24, 0.32, 0.41, 0, 0, -180); // WORKS FOR RED (9, 10)
+        
+        LimelightHelpers.setCameraPose_RobotSpace("limelight-right", 0.24, -0.32, 0.41, 0, 0, 0); // WORKS FOR BLUE (25, 26), this is the true offset
+
+
         // LimelightHelpers.setCameraPose_RobotSpace("limelight-left", -0.24, 0.535, 0.405, 0, 0, 90); // Camera 201
         //LimelightHelpers.setCameraPose_RobotSpace("limelight-back", -0.2346, -0.3201, 0.405, 0, 0, 180);
         // LimelightHelpers.setCameraPose_RobotSpace("203", 0.24, -0.115, 0.405, 0, 0, -90); // Camera 203
