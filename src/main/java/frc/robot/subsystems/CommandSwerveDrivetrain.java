@@ -51,7 +51,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private double m_lastSimTime;
     public static SwerveDrivePoseEstimator m_poseEstimator;
 
-    /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
     /* Red alliance sees forward as 180 degrees (toward blue alliance wall) */
     private static final Rotation2d kRedAlliancePerspectiveRotation = Rotation2d.k180deg;
@@ -306,35 +305,45 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SmartDashboard.putNumber("Odometry Y", getState().Pose.getY());
         SmartDashboard.putNumber("Angle", getState().Pose.getRotation().getDegrees());
 
-        LimelightHelpers.SetRobotOrientation("limelight-right", m_poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-        LimelightHelpers.PoseEstimate poseEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-right");
-        SmartDashboard.putNumber("TX", LimelightHelpers.getTX("limelight-right"));
-        // if our angular velocity is greater than 360 degrees per second, ignore vision updates
-        boolean doRejectUpdate = false;
-        if(Math.abs(DriveSubsystem.m_gyro.getRate()) > 360)
-        {
-            doRejectUpdate = true;
+        String[] limelightNames = { "limelight-front", "limelight-right", "limelight-back", "limelight-left" };
+        
+        LimelightHelpers.PoseEstimate poseEst = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-front");
+        for (String name : limelightNames) {
+            // LimelightHelpers.SetRobotOrientation(name, m_poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+            LimelightHelpers.SetRobotOrientation(name, getState().Pose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
+            LimelightHelpers.PoseEstimate poseEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
+
+            // if our angular velocity is greater than 360 degrees per second, ignore vision updates
+            boolean doRejectUpdate = false;
+            if(Math.abs(DriveSubsystem.m_gyro.getRate()) > 360)
+            {
+                doRejectUpdate = true;
+            }
+            if(poseEstimate.tagCount == 0)
+            {
+                doRejectUpdate = true;
+            }
+            if(!doRejectUpdate)
+            {
+                poseEst = poseEstimate;
+                m_poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.7,.7,9999999));
+                m_poseEstimator.addVisionMeasurement(
+                    poseEstimate.pose,
+                    poseEstimate.timestampSeconds);
+                
+            }
         }
-        if(poseEstimate.tagCount == 0)
-        {
-            doRejectUpdate = true;
-        }
-        if(!doRejectUpdate)
-        {
-            m_poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.7,.7,9999999));
-            m_poseEstimator.addVisionMeasurement(
-                poseEstimate.pose,
-                poseEstimate.timestampSeconds);
-            
-        }
-        System.out.println("x: "+poseEstimate.pose.getX());
-            System.out.println("y: "+poseEstimate.pose.getY());
-            System.out.println("r: "+poseEstimate.pose.getRotation().getDegrees());
-            System.out.println(poseEstimate.tagCount);
-        SmartDashboard.putNumber("Estimated x", poseEstimate.pose.getX());
-        SmartDashboard.putNumber("Estimated y", poseEstimate.pose.getY());
-        SmartDashboard.putNumber("Estimated rotation", poseEstimate.pose.getRotation().getDegrees());
-        SmartDashboard.putNumber("Estimated tag count", poseEstimate.tagCount);
+        
+        System.out.println("x: "+poseEst.pose.getX());
+            System.out.println("y: "+poseEst.pose.getY());
+            System.out.println("r: "+poseEst.pose.getRotation().getDegrees());
+            System.out.println(poseEst.tagCount);
+        SmartDashboard.putNumber("Estimated x", poseEst.pose.getX());
+        SmartDashboard.putNumber("Estimated y", poseEst.pose.getY());
+        SmartDashboard.putNumber("Estimated rotation", poseEst.pose.getRotation().getDegrees());
+        SmartDashboard.putNumber("Estimated tag count", poseEst.tagCount);
+                SmartDashboard.putNumber("YAW", DriveSubsystem.m_gyro.getRotation2d().getDegrees());
+
     }
 
     private void startSimThread() {
