@@ -23,12 +23,14 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.Turret;
 
 public class RobotContainer {
 
@@ -36,8 +38,9 @@ public class RobotContainer {
     private double maxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
     private double driveDeadband = 0.14;
     private double angleDeadband = 0.14;
-    private Optional<Alliance> currentAlliance = DriverStation.getAlliance();
-    public boolean isRedAlliance = (currentAlliance.isPresent() && (currentAlliance.get().equals(Alliance.Red))); 
+    // private Optional<Alliance> currentAlliance = DriverStation.getAlliance();
+    // public boolean isRedAlliance = (currentAlliance.isPresent() && (currentAlliance.get().equals(Alliance.Red))); 
+    public boolean turretAutoLock = false;
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(driveDeadband).withRotationalDeadband(angleDeadband) // Add a 10% deadband
@@ -51,6 +54,7 @@ public class RobotContainer {
 
     private final CommandXboxController joystick = new CommandXboxController(0);
     public static final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    public static final Turret turret = new Turret();
 
     private final SendableChooser<Command> autoChooser = new SendableChooser<>();
     private ShuffleboardTab tab1 = Shuffleboard.getTab("Tab1");
@@ -73,10 +77,10 @@ public class RobotContainer {
         // LimelightHelpers.setCameraPose_RobotSpace("limelight-right", -0.24, 0.32, 0.41, 0, 0, -180); // WORKS FOR RED (9, 10)
         // LimelightHelpers.setCameraPose_RobotSpace("limelight-right", 0.24, -0.32, 0.41, 0, 0, 0);  // WORKS FOR RED (25, 26)
 
-        LimelightHelpers.setCameraPose_RobotSpace("limelight-front", 0.32, -0.24, 0.41, 0, 0, 180);
-        LimelightHelpers.setCameraPose_RobotSpace("limelight-right", 0.24, 0.32, 0.41, 0, 0, 90);
-        LimelightHelpers.setCameraPose_RobotSpace("limelight-back", -0.32, 0.24, 0.41, 0, 0, 0);
-        LimelightHelpers.setCameraPose_RobotSpace("limelight-left", -0.24, -0.32, 0.41, 0, 0, -90);
+        LimelightHelpers.setCameraPose_RobotSpace("limelight-front", 0.32, -0.24, 0.41, 0, 0, 0);
+        LimelightHelpers.setCameraPose_RobotSpace("limelight-right", 0.24, 0.32, 0.41, 0, 0, -90);
+        LimelightHelpers.setCameraPose_RobotSpace("limelight-back", -0.32, 0.24, 0.41, 0, 0, 180);
+        LimelightHelpers.setCameraPose_RobotSpace("limelight-left", -0.24, -0.32, 0.41, 0, 0, 90);
 
         LimelightHelpers.setPipelineIndex("limelight-front", 0);
         LimelightHelpers.setPipelineIndex("limelight-right", 0);
@@ -84,6 +88,13 @@ public class RobotContainer {
         LimelightHelpers.setPipelineIndex("limelight-left", 0);
 
         // CommandSwerveDrivetrain.m_poseEstimator.resetPose(new Pose2d(2, 0, new Rotation2d(Math.PI/2)));
+    }
+
+    public Command enableTurretAutoLock() {
+        return Commands.runOnce(() -> { CommandSwerveDrivetrain.turretAutoLock = true; });
+    }
+    public Command disableTurretAutoLock() {
+        return Commands.runOnce(() -> { CommandSwerveDrivetrain.turretAutoLock = false; });
     }
 
     private void configureBindings() {
@@ -116,6 +127,14 @@ public class RobotContainer {
         // Reset the field-centric heading on left bumper press.
         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
         drivetrain.registerTelemetry(logger::telemeterize);
+
+        joystick.a().onTrue(turret.setYawCommand(180));
+        joystick.x().onTrue(turret.setYawCommand(90));
+        joystick.b().onTrue(turret.setYawCommand(-90));
+        joystick.y().onTrue(turret.setYawCommand(0));
+        joystick.povUp().onTrue(enableTurretAutoLock());
+        joystick.povDown().onTrue(disableTurretAutoLock());
+
     }
 
     private double limelight_aim_proportional()

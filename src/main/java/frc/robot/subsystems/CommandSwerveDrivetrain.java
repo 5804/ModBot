@@ -21,6 +21,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.Odometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -28,6 +29,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -36,6 +38,8 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.Constants;
 import frc.robot.LimelightHelpers;
+import frc.robot.RobotContainer;
+import frc.robot.LimelightHelpers.PoseEstimate;
 import frc.robot.subsystems.DriveSubsystem;
 
 /**
@@ -64,6 +68,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private final SwerveRequest.SysIdSwerveTranslation m_translationCharacterization = new SwerveRequest.SysIdSwerveTranslation();
     private final SwerveRequest.SysIdSwerveSteerGains m_steerCharacterization = new SwerveRequest.SysIdSwerveSteerGains();
     private final SwerveRequest.SysIdSwerveRotation m_rotationCharacterization = new SwerveRequest.SysIdSwerveRotation();
+
+    private final Turret m_turret = new Turret();
+
+    public static boolean turretAutoLock;
 
 
     /* SysId routine for characterizing translation. This is used to find PID gains for the drive motors. */
@@ -280,6 +288,14 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public Command sysIdDynamic(SysIdRoutine.Direction direction) {
         return m_sysIdRoutineToApply.dynamic(direction);
     }
+    
+
+    private LimelightHelpers.PoseEstimate visionPoseEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-front");
+    
+    public Pose2d getEstimatedPose() {
+        System.out.println(visionPoseEstimate.pose.getX());
+        return visionPoseEstimate.pose;
+    }
 
     @Override
     public void periodic() {
@@ -290,6 +306,16 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
          * Otherwise, only check and apply the operator perspective if the DS is disabled.
          * This ensures driving behavior doesn't change until an explicit disable event occurs during testing.
          */
+        m_poseEstimator.update(
+            DriveSubsystem.m_gyro.getRotation2d(),
+            new SwerveModulePosition[] {
+                DriveSubsystem.m_frontLeft.getPosition(),
+                DriveSubsystem.m_frontRight.getPosition(),
+                DriveSubsystem.m_rearLeft.getPosition(),
+                DriveSubsystem.m_rearRight.getPosition()
+            }
+        );
+
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
                 setOperatorPerspectiveForward(
@@ -306,44 +332,72 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SmartDashboard.putNumber("Angle", getState().Pose.getRotation().getDegrees());
 
         String[] limelightNames = { "limelight-front", "limelight-right", "limelight-back", "limelight-left" };
-        
-        LimelightHelpers.PoseEstimate poseEst = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-front");
-        for (String name : limelightNames) {
-            // LimelightHelpers.SetRobotOrientation(name, m_poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-            LimelightHelpers.SetRobotOrientation(name, getState().Pose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
-            LimelightHelpers.PoseEstimate poseEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
 
+        Optional<Alliance> currentAlliance = DriverStation.getAlliance();
+        boolean isRedAlliance = (currentAlliance.isPresent() && (currentAlliance.get().equals(Alliance.Red))); 
+
+        Pose2d lastOdometrySinceVisionUpdate = new Pose2d();
+
+        for (String name : limelightNames) {
+            LimelightHelpers.PoseEstimate individualVisionPoseEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
+            LimelightHelpers.SetRobotOrientation(name, getState().Pose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
             // if our angular velocity is greater than 360 degrees per second, ignore vision updates
             boolean doRejectUpdate = false;
             if(Math.abs(DriveSubsystem.m_gyro.getRate()) > 360)
             {
                 doRejectUpdate = true;
             }
-            if(poseEstimate.tagCount == 0)
+            if(individualVisionPoseEstimate.tagCount == 0)
             {
                 doRejectUpdate = true;
             }
-            if(!doRejectUpdate)
-            {
-                poseEst = poseEstimate;
-                m_poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.7,.7,9999999));
-                m_poseEstimator.addVisionMeasurement(
-                    poseEstimate.pose,
-                    poseEstimate.timestampSeconds);
-                
-            }
-        }
-        
-        System.out.println("x: "+poseEst.pose.getX());
-            System.out.println("y: "+poseEst.pose.getY());
-            System.out.println("r: "+poseEst.pose.getRotation().getDegrees());
-            System.out.println(poseEst.tagCount);
-        SmartDashboard.putNumber("Estimated x", poseEst.pose.getX());
-        SmartDashboard.putNumber("Estimated y", poseEst.pose.getY());
-        SmartDashboard.putNumber("Estimated rotation", poseEst.pose.getRotation().getDegrees());
-        SmartDashboard.putNumber("Estimated tag count", poseEst.tagCount);
-                SmartDashboard.putNumber("YAW", DriveSubsystem.m_gyro.getRotation2d().getDegrees());
+            if(!doRejectUpdate) {
+                lastOdometrySinceVisionUpdate = new Pose2d(getState().Pose.getX(), getState().Pose.getY(), getState().Pose.getRotation());
+                visionPoseEstimate = individualVisionPoseEstimate;
 
+                m_poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(0.1,0.1,Math.toRadians(5)));
+                m_poseEstimator.addVisionMeasurement(
+                    individualVisionPoseEstimate.pose,
+                    individualVisionPoseEstimate.timestampSeconds);
+                    System.out.println("Updated!");
+                
+                if (turretAutoLock) {
+                    m_turret.setYaw(-(getEstimatedPose().getRotation().getDegrees()) 
+                + m_turret.getMotorYawOffset(
+                        getEstimatedPose().getX(), 
+                        getEstimatedPose().getY(), 
+                        isRedAlliance
+                    ));
+                }
+            } else {
+            // No tags visible → feed current odometry pose as "vision" with high uncertainty
+            Pose2d currentOdometry = new Pose2d(getState().Pose.getX(),
+                                                getState().Pose.getY(),
+                                                getState().Pose.getRotation());
+            Pose2d odometryDifference = new Pose2d(currentOdometry.getX() - lastOdometrySinceVisionUpdate.getX(),
+                                                   currentOdometry.getY() - lastOdometrySinceVisionUpdate.getY(),
+                                                   Rotation2d.fromDegrees(currentOdometry.getRotation().getDegrees() - lastOdometrySinceVisionUpdate.getRotation().getDegrees()));
+            Pose2d newPosition = new Pose2d(individualVisionPoseEstimate.pose.getX() + odometryDifference.getX(),
+                                            individualVisionPoseEstimate.pose.getY() + odometryDifference.getY(),
+                                            Rotation2d.fromDegrees(individualVisionPoseEstimate.pose.getRotation().getDegrees() + odometryDifference.getRotation().getDegrees()));
+            
+            m_poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(1.0, 1.0, Math.toRadians(30)));
+            m_poseEstimator.addVisionMeasurement(
+                newPosition,
+                Timer.getFPGATimestamp()
+            );
+            System.out.println("Updated with predicted pose (no tags)");
+    }
+        }
+
+        SmartDashboard.putNumber("Vision x", visionPoseEstimate.pose.getX());
+        SmartDashboard.putNumber("Vision y", visionPoseEstimate.pose.getY());
+        SmartDashboard.putNumber("Vision rotation", visionPoseEstimate.pose.getRotation().getDegrees());
+        SmartDashboard.putNumber("Vision tag count", visionPoseEstimate.tagCount);
+
+        SmartDashboard.putNumber("Pose Estimator X", m_poseEstimator.getEstimatedPosition().getX());
+        SmartDashboard.putNumber("Pose Estimator Y", m_poseEstimator.getEstimatedPosition().getY());
+        SmartDashboard.putNumber("Pose Estimator rotation", m_poseEstimator.getEstimatedPosition().getRotation().getDegrees());
     }
 
     private void startSimThread() {
