@@ -359,7 +359,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 m_poseEstimator.addVisionMeasurement(
                     individualVisionPoseEstimate.pose,
                     individualVisionPoseEstimate.timestampSeconds);
-                    System.out.println("Updated!");
+                    // System.out.println("Updated!");
                 
                 if (turretAutoLock) {
                     m_turret.setYaw(-(getEstimatedPose().getRotation().getDegrees()) 
@@ -371,22 +371,32 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 }
             } else {
             // No tags visible → feed current odometry pose as "vision" with high uncertainty
-            Pose2d currentOdometry = new Pose2d(getState().Pose.getX(),
-                                                getState().Pose.getY(),
-                                                getState().Pose.getRotation());
-            Pose2d odometryDifference = new Pose2d(currentOdometry.getX() - lastOdometrySinceVisionUpdate.getX(),
-                                                   currentOdometry.getY() - lastOdometrySinceVisionUpdate.getY(),
-                                                   Rotation2d.fromDegrees(currentOdometry.getRotation().getDegrees() - lastOdometrySinceVisionUpdate.getRotation().getDegrees()));
-            Pose2d newPosition = new Pose2d(individualVisionPoseEstimate.pose.getX() + odometryDifference.getX(),
-                                            individualVisionPoseEstimate.pose.getY() + odometryDifference.getY(),
-                                            Rotation2d.fromDegrees(individualVisionPoseEstimate.pose.getRotation().getDegrees() + odometryDifference.getRotation().getDegrees()));
+            Pose2d currentOdometry = new Pose2d(
+                getState().Pose.getX(),
+                getState().Pose.getY(),
+                getState().Pose.getRotation()
+            );
+
+            Pose2d odometryDifference = new Pose2d(
+                currentOdometry.getX() - lastOdometrySinceVisionUpdate.getX(),
+                currentOdometry.getY() - lastOdometrySinceVisionUpdate.getY(),
+                Rotation2d.fromDegrees(currentOdometry.getRotation().getDegrees() - lastOdometrySinceVisionUpdate.getRotation().getDegrees())
+            );
+
+            SmartDashboard.putString("Odometry difference", "(" + odometryDifference.getX() + ", " + odometryDifference.getY() + ", " + odometryDifference.getRotation().getDegrees() + ")");
+
+            Pose2d newPosition = new Pose2d(
+                visionPoseEstimate.pose.getX() + odometryDifference.getX(),
+                visionPoseEstimate.pose.getY() + odometryDifference.getY(),
+                Rotation2d.fromDegrees(visionPoseEstimate.pose.getRotation().getDegrees() + odometryDifference.getRotation().getDegrees())
+            );
             
             m_poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(1.0, 1.0, Math.toRadians(30)));
             m_poseEstimator.addVisionMeasurement(
                 newPosition,
                 Timer.getFPGATimestamp()
             );
-            System.out.println("Updated with predicted pose (no tags)");
+            // System.out.println("Updated with predicted pose (no tags)");
     }
         }
 

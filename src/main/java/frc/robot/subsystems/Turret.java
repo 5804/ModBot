@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -63,8 +64,6 @@ public class Turret extends SubsystemBase {
     return revToDeg(yawPosition);
   }
 
-
-
   public double getMotorYawOffset(double robotX, double robotY, boolean isRedAlliance) {
     double pointTowardsX; // Meters
     double pointTowardsY = 4.034663;
@@ -75,8 +74,6 @@ public class Turret extends SubsystemBase {
       pointTowardsX = 11.915394; // Blue
     }
 
-    // System.out.println("OdometryX: " + robotX);
-    // System.out.println("OdometryY: " + robotY);
 
     double robotOffsetX = pointTowardsX - robotX;
     double robotOffsetY = pointTowardsY - robotY;
@@ -111,8 +108,6 @@ public class Turret extends SubsystemBase {
     return MathUtil.inputModulus(deg, -180.0, 180.0);
   }
 
-
-
   public void setYaw(double angleDeg) { // Angle in degrees in respect to pointing towards front of the robot
     double normalized = normalizeAngle(angleDeg);
     //double smoothed = yawLimiter.calculate(normalized);
@@ -132,15 +127,17 @@ public class Turret extends SubsystemBase {
     //pos = limit.calculate(time,current,targState); //I don't know how to fix this as of 1/30
  
     yawMotor.setControl(new MotionMagicExpoVoltage(targetAngle));
-    System.out.println("Target Angle in Rev: "+targetAngle);
+    // System.out.println("Target Angle in Rev: "+targetAngle);
   }
 
   public Command setYawCommand(double angleDeg) {
+    double normalized = normalizeAngle(angleDeg);
+
     double turretMotorGearRatio = 7.67;
-    double targetAngle = turretMotorGearRatio * degToRev(angleDeg);
+    double targetAngle = turretMotorGearRatio * degToRev(normalized);
     
-    return run(() -> { yawMotor.setControl(new MotionMagicExpoVoltage(targetAngle));});
-}
+    return run(() -> { yawMotor.setControl(new MotionMagicExpoVoltage(targetAngle)); });
+  }
 
   @Override
   public void periodic() {

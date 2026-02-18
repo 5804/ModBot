@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -38,8 +39,8 @@ public class RobotContainer {
     private double maxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
     private double driveDeadband = 0.14;
     private double angleDeadband = 0.14;
-    // private Optional<Alliance> currentAlliance = DriverStation.getAlliance();
-    // public boolean isRedAlliance = (currentAlliance.isPresent() && (currentAlliance.get().equals(Alliance.Red))); 
+    private Optional<Alliance> currentAlliance = DriverStation.getAlliance();
+    public boolean isRedAlliance = (currentAlliance.isPresent() && (currentAlliance.get().equals(Alliance.Red))); 
     public boolean turretAutoLock = false;
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -97,6 +98,17 @@ public class RobotContainer {
         return Commands.runOnce(() -> { CommandSwerveDrivetrain.turretAutoLock = false; });
     }
 
+    public Command aimTurretHub() { // Change to suppliers inside the parameters, might work
+        return turret.setYawCommand(
+            -(drivetrain.getEstimatedPose().getRotation().getDegrees()) 
+            + turret.getMotorYawOffset(
+                drivetrain.getEstimatedPose().getX(), 
+                drivetrain.getEstimatedPose().getY(), 
+                isRedAlliance
+            )
+        );
+    }
+
     private void configureBindings() {
         drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() ->
@@ -132,9 +144,8 @@ public class RobotContainer {
         joystick.x().onTrue(turret.setYawCommand(90));
         joystick.b().onTrue(turret.setYawCommand(-90));
         joystick.y().onTrue(turret.setYawCommand(0));
-        joystick.povUp().onTrue(enableTurretAutoLock());
-        joystick.povDown().onTrue(disableTurretAutoLock());
 
+        joystick.povUp().onTrue(aimTurretHub()/* .until(() -> { return joystick.povDown().getAsBoolean(); })*/);
     }
 
     private double limelight_aim_proportional()

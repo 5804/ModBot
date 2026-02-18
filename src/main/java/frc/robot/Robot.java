@@ -19,7 +19,6 @@ public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
 
     private final RobotContainer m_robotContainer;
-    private final CommandSwerveDrivetrain m_drivetrain;
     private final Turret m_turret;
 
     /* log and replay timestamp and joystick data */
@@ -30,7 +29,6 @@ public class Robot extends TimedRobot {
     public Robot() {
         m_robotContainer = new RobotContainer();
         m_turret = new Turret();
-        m_drivetrain = TunerConstants.createDrivetrain();
 
         CanBridge.runTCP();
     }
@@ -76,16 +74,20 @@ public class Robot extends TimedRobot {
     @Override
     public void teleopPeriodic() {
         // if (m_robotContainer.turretAutoLock) {
-            // m_turret.setYaw(-(m_drivetrain.getEstimatedPose().getRotation().getDegrees()) 
-        //   + m_turret.getMotorYawOffset(
-        //         m_drivetrain.getEstimatedPose().getX(), 
-        //         m_drivetrain.getEstimatedPose().getY(), 
-        //         m_robotContainer.isRedAlliance
-        //     ));
-        //     // System.out.println(m_drivetrain.getEstimatedPose().getRotation().getDegrees());
-        //     // System.out.println(m_drivetrain.getEstimatedPose().getX());
-        //     // System.out.println("This is currently working gg");
+        //     m_turret.setYaw(
+        //         -(m_drivetrain.getEstimatedPose().getRotation().getDegrees()) 
+        //         + m_turret.getMotorYawOffset(
+        //             m_drivetrain.getEstimatedPose().getX(), 
+        //             m_drivetrain.getEstimatedPose().getY(), 
+        //             m_robotContainer.isRedAlliance
+        //         )
+        //     );           
         // }
+
+        // System.out.println("--------");
+        // System.out.println("Rotation: "+m_drivetrain.getEstimatedPose().getRotation().getDegrees());
+        // System.out.println("X: "+m_drivetrain.getEstimatedPose().getX());
+        // System.out.println("Y"+m_drivetrain.getEstimatedPose().getY());
     }
 
     @Override
