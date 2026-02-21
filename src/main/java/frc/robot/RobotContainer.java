@@ -28,7 +28,7 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-
+import frc.robot.commandfactories.TurretFactory;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Turret;
@@ -39,9 +39,8 @@ public class RobotContainer {
     private double maxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
     private double driveDeadband = 0.14;
     private double angleDeadband = 0.14;
-    private Optional<Alliance> currentAlliance = DriverStation.getAlliance();
-    public boolean isRedAlliance = (currentAlliance.isPresent() && (currentAlliance.get().equals(Alliance.Red))); 
-    public boolean turretAutoLock = false;
+    private static Optional<Alliance> currentAlliance = DriverStation.getAlliance();
+    public static boolean isRedAlliance = (currentAlliance.isPresent() && (currentAlliance.get().equals(Alliance.Red))); 
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(driveDeadband).withRotationalDeadband(angleDeadband) // Add a 10% deadband
@@ -56,6 +55,7 @@ public class RobotContainer {
     private final CommandXboxController joystick = new CommandXboxController(0);
     public static final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     public static final Turret turret = new Turret();
+    public static final TurretFactory turretFactory = new TurretFactory(drivetrain, turret, isRedAlliance);
 
     private final SendableChooser<Command> autoChooser = new SendableChooser<>();
     private ShuffleboardTab tab1 = Shuffleboard.getTab("Tab1");
@@ -89,24 +89,6 @@ public class RobotContainer {
         LimelightHelpers.setPipelineIndex("limelight-left", 0);
 
         // CommandSwerveDrivetrain.m_poseEstimator.resetPose(new Pose2d(2, 0, new Rotation2d(Math.PI/2)));
-    }
-
-    public Command enableTurretAutoLock() {
-        return Commands.runOnce(() -> { CommandSwerveDrivetrain.turretAutoLock = true; });
-    }
-    public Command disableTurretAutoLock() {
-        return Commands.runOnce(() -> { CommandSwerveDrivetrain.turretAutoLock = false; });
-    }
-
-    public Command aimTurretHub() { // Change to suppliers inside the parameters, might work
-        return turret.setYawCommand(
-            -(drivetrain.getEstimatedPose().getRotation().getDegrees()) 
-            + turret.getMotorYawOffset(
-                drivetrain.getEstimatedPose().getX(), 
-                drivetrain.getEstimatedPose().getY(), 
-                isRedAlliance
-            )
-        );
     }
 
     private void configureBindings() {
@@ -145,7 +127,8 @@ public class RobotContainer {
         joystick.b().onTrue(turret.setYawCommand(-90));
         joystick.y().onTrue(turret.setYawCommand(0));
 
-        joystick.povUp().onTrue(aimTurretHub()/* .until(() -> { return joystick.povDown().getAsBoolean(); })*/);
+        joystick.povUp().whileTrue(turretFactory.aimTurretHub()/* .until(() -> { return joystick.povDown().getAsBoolean(); })*/);
+        // joystick.povUp().toggleOnTrue(Commands.run(() -> { TurretFactory.aimTurretHub(drivetrain, turret, isRedAlliance); }));//.until(() -> { return joystick.povDown(); }));
     }
 
     private double limelight_aim_proportional()
