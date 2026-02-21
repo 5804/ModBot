@@ -39,9 +39,9 @@ public class Turret extends SubsystemBase {
 
     // set Motion Magic settings
     var motionMagicConfigs = talonFXConfigs.MotionMagic;
-    motionMagicConfigs.MotionMagicCruiseVelocity = 0; // Target cruise velocity of 80 rps
-    //motionMagicConfigs.MotionMagicAcceleration = 1000; // Target acceleration of 160 rps/s (0.5 seconds)
-    //motionMagicConfigs.MotionMagicJerk = 10000; // Target jerk of 1600 rps/s/s (0.1 seconds)
+    motionMagicConfigs.MotionMagicCruiseVelocity = 100; // Target cruise velocity of 80 rps
+    motionMagicConfigs.MotionMagicAcceleration = 1000; // Target acceleration of 160 rps/s (0.5 seconds)
+    motionMagicConfigs.MotionMagicJerk = 10000; // Target jerk of 1600 rps/s/s (0.1 seconds)
 
     yawMotor.getConfigurator().apply(talonFXConfigs);
   }
@@ -138,6 +138,14 @@ public class Turret extends SubsystemBase {
     
     return run(() -> { yawMotor.setControl(new MotionMagicExpoVoltage(targetAngle)); });
   }
+
+public Command turretClockwise(double speed) {
+  return run(() -> {  } );
+}
+
+public Command turretCounterClockwise(double speed) {
+  return run(() -> {  } );
+}
 
   @Override
   public void periodic() {

@@ -110,7 +110,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         try {
             var config = RobotConfig.fromGUISettings();
             AutoBuilder.configure(
-                () -> getState().Pose,   // Supplier of current robot pose
+                () -> m_poseEstimator.getEstimatedPosition(),   // Supplier of current robot pose
                 this::resetPose,         // Consumer for seeding pose against auto
                 () -> getState().Speeds, // Supplier of current robot speeds
                 // Consumer of ChassisSpeeds and feedforwards to drive the robot
@@ -291,11 +291,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     
 
     private LimelightHelpers.PoseEstimate visionPoseEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-front");
-    
-    public Pose2d getEstimatedPose() {
-        System.out.println(visionPoseEstimate.pose.getX());
-        return visionPoseEstimate.pose;
-    }
 
     @Override
     public void periodic() {
@@ -306,7 +301,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
          * Otherwise, only check and apply the operator perspective if the DS is disabled.
          * This ensures driving behavior doesn't change until an explicit disable event occurs during testing.
          */
-        m_poseEstimator.update(
+        m_poseEstimator.updateWithTime(
+            Timer.getFPGATimestamp(),
             DriveSubsystem.m_gyro.getRotation2d(),
             new SwerveModulePosition[] {
                 DriveSubsystem.m_frontLeft.getPosition(),
@@ -315,6 +311,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 DriveSubsystem.m_rearRight.getPosition()
             }
         );
+
+        SmartDashboard.putNumber("Gyro Deg", DriveSubsystem.m_gyro.getRotation2d().getDegrees());
+        SmartDashboard.putNumber("FL Distance", DriveSubsystem.m_frontLeft.getPosition().distanceMeters);
+        SmartDashboard.putNumber("FR Distance", DriveSubsystem.m_frontRight.getPosition().distanceMeters);
+        SmartDashboard.putNumber("RL Distance", DriveSubsystem.m_rearLeft.getPosition().distanceMeters);
+        SmartDashboard.putNumber("RR Distance", DriveSubsystem.m_rearRight.getPosition().distanceMeters);
 
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
@@ -331,7 +333,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SmartDashboard.putNumber("Odometry Y", getState().Pose.getY());
         SmartDashboard.putNumber("Angle", getState().Pose.getRotation().getDegrees());
 
-        String[] limelightNames = { "limelight-front", "limelight-right", "limelight-back", "limelight-left" };
+        String[] limelightNames = { "limelight-front" };
 
         Optional<Alliance> currentAlliance = DriverStation.getAlliance();
         boolean isRedAlliance = (currentAlliance.isPresent() && (currentAlliance.get().equals(Alliance.Red))); 
@@ -360,45 +362,54 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                     individualVisionPoseEstimate.pose,
                     individualVisionPoseEstimate.timestampSeconds);
                     // System.out.println("Updated!");
-                
-                if (turretAutoLock) {
-                    m_turret.setYaw(-(getEstimatedPose().getRotation().getDegrees()) 
-                + m_turret.getMotorYawOffset(
-                        getEstimatedPose().getX(), 
-                        getEstimatedPose().getY(), 
-                        isRedAlliance
-                    ));
-                }
+        
             } else {
             // No tags visible → feed current odometry pose as "vision" with high uncertainty
-            Pose2d currentOdometry = new Pose2d(
-                getState().Pose.getX(),
-                getState().Pose.getY(),
-                getState().Pose.getRotation()
-            );
+            // Pose2d currentOdometry = new Pose2d(
+            //     getState().Pose.getX(),
+            //     getState().Pose.getY(),
+            //     getState().Pose.getRotation()
+            // );
 
-            Pose2d odometryDifference = new Pose2d(
-                currentOdometry.getX() - lastOdometrySinceVisionUpdate.getX(),
-                currentOdometry.getY() - lastOdometrySinceVisionUpdate.getY(),
-                Rotation2d.fromDegrees(currentOdometry.getRotation().getDegrees() - lastOdometrySinceVisionUpdate.getRotation().getDegrees())
-            );
+            // SmartDashboard.putNumber("Current Odometry X",  currentOdometry.getX());
+            // SmartDashboard.putNumber("Current Odometry Y",  currentOdometry.getY());
+            // SmartDashboard.putNumber("Current Odometry Rot",  currentOdometry.getRotation().getDegrees());
 
-            SmartDashboard.putString("Odometry difference", "(" + odometryDifference.getX() + ", " + odometryDifference.getY() + ", " + odometryDifference.getRotation().getDegrees() + ")");
+            // Pose2d odometryDifference = new Pose2d(
+            //     currentOdometry.getX() - lastOdometrySinceVisionUpdate.getX(),
+            //     currentOdometry.getY() - lastOdometrySinceVisionUpdate.getY(),
+            //     Rotation2d.fromDegrees(currentOdometry.getRotation().getDegrees() - lastOdometrySinceVisionUpdate.getRotation().getDegrees())
+            // );
 
-            Pose2d newPosition = new Pose2d(
-                visionPoseEstimate.pose.getX() + odometryDifference.getX(),
-                visionPoseEstimate.pose.getY() + odometryDifference.getY(),
-                Rotation2d.fromDegrees(visionPoseEstimate.pose.getRotation().getDegrees() + odometryDifference.getRotation().getDegrees())
-            );
+            // SmartDashboard.putNumber("Odometry Difference X",  odometryDifference.getX());
+            // SmartDashboard.putNumber("Odometry Difference Y",  odometryDifference.getY());
+            // SmartDashboard.putNumber("Odometry Difference Rot",  odometryDifference.getRotation().getDegrees());
+
+            // Pose2d newPosition = new Pose2d(
+            //     visionPoseEstimate.pose.getX() + odometryDifference.getX(),
+            //     visionPoseEstimate.pose.getY() + odometryDifference.getY(),
+            //     // Rotation2d.fromDegrees(visionPoseEstimate.pose.getRotation().getDegrees() + odometryDifference.getRotation().getDegrees())
+            //     getState().Pose.getRotation()
+            // );
             
-            m_poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(1.0, 1.0, Math.toRadians(30)));
-            m_poseEstimator.addVisionMeasurement(
-                newPosition,
-                Timer.getFPGATimestamp()
-            );
+            // m_poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(.1, .1, Math.toRadians(5)));
+            // m_poseEstimator.addVisionMeasurement(
+            //     newPosition,
+            //     Timer.getFPGATimestamp()
+            // );
             // System.out.println("Updated with predicted pose (no tags)");
-    }
+
+            m_poseEstimator.updateWithTime(
+            Timer.getFPGATimestamp(),
+            DriveSubsystem.m_gyro.getRotation2d(),
+            new SwerveModulePosition[] {
+                DriveSubsystem.m_frontLeft.getPosition(),
+                DriveSubsystem.m_frontRight.getPosition(),
+                DriveSubsystem.m_rearLeft.getPosition(),
+                DriveSubsystem.m_rearRight.getPosition()
+            });
         }
+    }
 
         SmartDashboard.putNumber("Vision x", visionPoseEstimate.pose.getX());
         SmartDashboard.putNumber("Vision y", visionPoseEstimate.pose.getY());

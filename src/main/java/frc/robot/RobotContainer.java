@@ -91,22 +91,19 @@ public class RobotContainer {
         // CommandSwerveDrivetrain.m_poseEstimator.resetPose(new Pose2d(2, 0, new Rotation2d(Math.PI/2)));
     }
 
-    public Command enableTurretAutoLock() {
-        return Commands.runOnce(() -> { CommandSwerveDrivetrain.turretAutoLock = true; });
-    }
-    public Command disableTurretAutoLock() {
-        return Commands.runOnce(() -> { CommandSwerveDrivetrain.turretAutoLock = false; });
-    }
-
     public Command aimTurretHub() { // Change to suppliers inside the parameters, might work
-        return turret.setYawCommand(
-            -(drivetrain.getEstimatedPose().getRotation().getDegrees()) 
+        return Commands.run(() -> { turret.setYaw(
+            -(CommandSwerveDrivetrain.m_poseEstimator.getEstimatedPosition().getRotation().getDegrees()) 
             + turret.getMotorYawOffset(
-                drivetrain.getEstimatedPose().getX(), 
-                drivetrain.getEstimatedPose().getY(), 
+                CommandSwerveDrivetrain.m_poseEstimator.getEstimatedPosition().getX(), 
+                CommandSwerveDrivetrain.m_poseEstimator.getEstimatedPosition().getY(), 
                 isRedAlliance
             )
-        );
+        ); }, turret);
+    }
+
+    public Command aimTurretStop() {
+        return Commands.run(() -> { turret.setYaw(0); }, turret);
     }
 
     private void configureBindings() {
@@ -140,12 +137,15 @@ public class RobotContainer {
         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
         drivetrain.registerTelemetry(logger::telemeterize);
 
+        // joystick.rightTrigger().whileTrue(turret.turretClockwise(.5));
+        // joystick.leftTrigger().whileTrue(turret.turretCounterClockwise(.5));
         joystick.a().onTrue(turret.setYawCommand(180));
         joystick.x().onTrue(turret.setYawCommand(90));
         joystick.b().onTrue(turret.setYawCommand(-90));
         joystick.y().onTrue(turret.setYawCommand(0));
 
-        joystick.povUp().onTrue(aimTurretHub()/* .until(() -> { return joystick.povDown().getAsBoolean(); })*/);
+        joystick.povUp().onTrue(aimTurretHub());
+        joystick.povDown().onTrue(aimTurretStop());
     }
 
     private double limelight_aim_proportional()
