@@ -39,14 +39,12 @@ public class RobotContainer {
     private double maxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
     private double driveDeadband = 0.14;
     private double angleDeadband = 0.14;
-    private Optional<Alliance> currentAlliance = DriverStation.getAlliance();
-    public boolean isRedAlliance = (currentAlliance.isPresent() && (currentAlliance.get().equals(Alliance.Red))); 
     public boolean turretAutoLock = false;
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(driveDeadband).withRotationalDeadband(angleDeadband) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-
+            
     private final SwerveRequest.RobotCentric roboDrive = new SwerveRequest.RobotCentric()
         .withDeadband(driveDeadband).withRotationalDeadband(angleDeadband)
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
@@ -75,11 +73,8 @@ public class RobotContainer {
         SmartDashboard.putData("Auto choices", autoChooser);
         tab1.add("Auto Chooser", autoChooser);
 
-        // LimelightHelpers.setCameraPose_RobotSpace("limelight-right", -0.24, 0.32, 0.41, 0, 0, -180); // WORKS FOR RED (9, 10)
-        // LimelightHelpers.setCameraPose_RobotSpace("limelight-right", 0.24, -0.32, 0.41, 0, 0, 0);  // WORKS FOR RED (25, 26)
-
         LimelightHelpers.setCameraPose_RobotSpace("limelight-front", 0.32, -0.24, 0.41, 0, 0, 0);
-        LimelightHelpers.setCameraPose_RobotSpace("limelight-right", 0.24, 0.32, 0.41, 0, 0, -90);
+        LimelightHelpers.setCameraPose_RobotSpace("limelight-right", 0.24, 0.32, 0.41, 0, 0, 270);
         LimelightHelpers.setCameraPose_RobotSpace("limelight-back", -0.32, 0.24, 0.41, 0, 0, 180);
         LimelightHelpers.setCameraPose_RobotSpace("limelight-left", -0.24, -0.32, 0.41, 0, 0, 90);
 
@@ -91,17 +86,6 @@ public class RobotContainer {
         // CommandSwerveDrivetrain.m_poseEstimator.resetPose(new Pose2d(2, 0, new Rotation2d(Math.PI/2)));
     }
 
-    public Command aimTurretHub() { // Change to suppliers inside the parameters, might work
-        return Commands.run(() -> { turret.setYaw(
-            -(CommandSwerveDrivetrain.m_poseEstimator.getEstimatedPosition().getRotation().getDegrees()) 
-            + turret.getMotorYawOffset(
-                CommandSwerveDrivetrain.m_poseEstimator.getEstimatedPosition().getX(), 
-                CommandSwerveDrivetrain.m_poseEstimator.getEstimatedPosition().getY(), 
-                isRedAlliance
-            )
-        ); }, turret);
-    }
-
     public Command aimTurretStop() {
         return Commands.run(() -> { turret.setYaw(0); }, turret);
     }
@@ -109,8 +93,8 @@ public class RobotContainer {
     private void configureBindings() {
         drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(MathUtil.applyDeadband(joystick.getLeftY(), driveDeadband) * -1 * maxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(MathUtil.applyDeadband(joystick.getLeftX(), driveDeadband) * -1 * maxSpeed) // Drive left with negative X (left)
+                drive.withVelocityX(MathUtil.applyDeadband(joystick.getLeftY(), driveDeadband) * maxSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(MathUtil.applyDeadband(joystick.getLeftX(), driveDeadband) * maxSpeed) // Drive left with negative X (left)
                     .withRotationalRate(MathUtil.applyDeadband(joystick.getRightX(), angleDeadband) * -1 * maxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
@@ -124,15 +108,6 @@ public class RobotContainer {
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
 
-        // Run SysId routines when holding back/start and X/Y.
-        // Note that each routine should be run exactly once in a single log.
-        if (DriverStation.isTest()) {
-            joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-            joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-            joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-            joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-        }
-
         // Reset the field-centric heading on left bumper press.
         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
         drivetrain.registerTelemetry(logger::telemeterize);
@@ -144,7 +119,6 @@ public class RobotContainer {
         joystick.b().onTrue(turret.setYawCommand(-90));
         joystick.y().onTrue(turret.setYawCommand(0));
 
-        joystick.povUp().onTrue(aimTurretHub());
         joystick.povDown().onTrue(aimTurretStop());
     }
 
