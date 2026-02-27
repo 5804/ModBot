@@ -69,6 +69,7 @@ public class RobotContainer {
         autoChooser.addOption("Swerve Test", swerveTestAuto());
         autoChooser.addOption("Vision Test", visionTestAuto());
         autoChooser.addOption("singlePos", singlePos());
+        autoChooser.addOption("NoMove", noMove());
 
         SmartDashboard.putData("Auto choices", autoChooser);
         tab1.add("Auto Chooser", autoChooser);
@@ -93,8 +94,8 @@ public class RobotContainer {
     private void configureBindings() {
         drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(MathUtil.applyDeadband(joystick.getLeftY(), driveDeadband) * maxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(MathUtil.applyDeadband(joystick.getLeftX(), driveDeadband) * maxSpeed) // Drive left with negative X (left)
+                drive.withVelocityX(MathUtil.applyDeadband(joystick.getLeftY(), driveDeadband) * -1 * maxSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(MathUtil.applyDeadband(joystick.getLeftX(), driveDeadband) * -1 * maxSpeed) // Drive left with negative X (left)
                     .withRotationalRate(MathUtil.applyDeadband(joystick.getRightX(), angleDeadband) * -1 * maxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
@@ -206,5 +207,9 @@ public class RobotContainer {
 
     public Command singlePos() {
         return new PathPlannerAuto("singlePos");
+    }
+
+    public Command noMove() {
+        return new PathPlannerAuto("NoMove");
     }
 }

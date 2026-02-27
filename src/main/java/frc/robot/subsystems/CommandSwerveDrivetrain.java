@@ -234,7 +234,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
             if(!rejectUpdate) {
                 setVisionMeasurementStdDevs(VecBuilder.fill(0.1,0.1,Math.toRadians(5)));
-                addVisionMeasurement(individualVisionPoseEstimate.pose,individualVisionPoseEstimate.timestampSeconds);
+                addVisionMeasurement(individualVisionPoseEstimate.pose, individualVisionPoseEstimate.timestampSeconds);
             }
         }
 
