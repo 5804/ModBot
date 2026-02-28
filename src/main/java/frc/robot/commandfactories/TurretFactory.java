@@ -40,6 +40,10 @@ public class TurretFactory {
         odometryY = drivetrain.getState().Pose.getY();
         odometryRot = drivetrain.getState().Pose.getRotation().getDegrees();
 
+        System.out.println(odometryX);
+        System.out.println(odometryY);
+        System.out.println(odometryRot);
+        
         motorYawOffset = turret.getMotorYawOffset(
                 drivetrain.getState().Pose.getX(),
                 drivetrain.getState().Pose.getY(),
