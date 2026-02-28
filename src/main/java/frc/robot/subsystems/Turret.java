@@ -12,6 +12,8 @@ import java.util.function.BooleanSupplier;
 
 import com.ctre.phoenix6.*;
 import com.ctre.phoenix6.hardware.*;
+import com.ctre.phoenix6.signals.InvertedValue;
+
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -25,6 +27,8 @@ public class Turret extends SubsystemBase {
   public Turret() {
     // in init function
     var talonFXConfigs = new TalonFXConfiguration();
+
+    talonFXConfigs.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
     // set slot 0 gains
     var slot0Configs = talonFXConfigs.Slot0;
@@ -44,13 +48,16 @@ public class Turret extends SubsystemBase {
     motionMagicConfigs.MotionMagicJerk = 10000; // Target jerk of 1600 rps/s/s (0.1 seconds)
 
     yawMotor.getConfigurator().apply(talonFXConfigs);
+    
   }
 
-  
 
   final MotionMagicVoltage motionMagicRequest = new MotionMagicVoltage(0);
   private static final double YAW_DEADBAND_DEG = 0;
   private double lastCommandedYaw = 0.0;
+  
+  // Rotations of kraken for one rotation of turret
+  private double TURRET_GEAR_RATIO = 6.4; // 7.67 for 3d printed turret, 6.4 for comp turret
 
   public double revToDeg(double rev) {
     return rev * 360;
@@ -95,8 +102,6 @@ public class Turret extends SubsystemBase {
   // double kAcc = 10.0;
   // private final SlewRateLimiter yawLimiter = new SlewRateLimiter(240); // deg/sec
 
-  
-
   private double applyDeadband(double targetDeg) {
     if (Math.abs(targetDeg - lastCommandedYaw) < YAW_DEADBAND_DEG) {
         return lastCommandedYaw;
@@ -109,12 +114,8 @@ public class Turret extends SubsystemBase {
   }
 
   public void setYaw(double angleDeg) { // Angle in degrees in respect to pointing towards front of the robot
-    double normalized = normalizeAngle(angleDeg);
-    //double smoothed = yawLimiter.calculate(normalized);
-    // double filtered = applyDeadband(normalized);
     
-    double turretMotorGearRatio = 7.67; // as of 1/23/26 7.67 is exactly 1 rotation of turret wheel (not motor)
-    double targetAngle = turretMotorGearRatio * degToRev(normalized);
+    double targetAngle = TURRET_GEAR_RATIO * degToRev(normalizeAngle(angleDeg));
 
     // edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints  max = new edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints(kVel, kAcc);
     // TrapezoidProfile limit = new TrapezoidProfile(max);
@@ -133,8 +134,7 @@ public class Turret extends SubsystemBase {
   public Command setYawCommand(double angleDeg) {
     double normalized = normalizeAngle(angleDeg);
 
-    double turretMotorGearRatio = 7.67;
-    double targetAngle = turretMotorGearRatio * degToRev(normalized);
+    double targetAngle = TURRET_GEAR_RATIO * degToRev(normalized);
     
     return run(() -> { yawMotor.setControl(new MotionMagicExpoVoltage(targetAngle)); });
   }
