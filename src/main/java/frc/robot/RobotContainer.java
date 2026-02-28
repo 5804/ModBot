@@ -45,7 +45,7 @@ public class RobotContainer {
     public static boolean isRedAlliance = alliance.get() == Alliance.Red;
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-            .withDeadband(driveDeadband).withRotationalDeadband(angleDeadband) // Add a 10% deadband
+            .withDeadband(driveDeadband).withRotationalDeadband(angleDeadband)
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
             
     private final SwerveRequest.RobotCentric roboDrive = new SwerveRequest.RobotCentric()
@@ -58,7 +58,7 @@ public class RobotContainer {
     public static final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
     public static final Turret turret = new Turret();
-    public TurretFactory turretFactory = new TurretFactory(drivetrain, turret, isRedAlliance);
+    public static TurretFactory turretFactory = new TurretFactory(drivetrain, turret, isRedAlliance);
 
     private final SendableChooser<Command> autoChooser = new SendableChooser<>();
     private ShuffleboardTab tab1 = Shuffleboard.getTab("Tab1");

@@ -5,8 +5,11 @@ import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.motorcontrol.Talon;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.commandfactories.TurretFactory;
 
 import java.util.function.BooleanSupplier;
 
@@ -23,6 +26,8 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 
 public class Turret extends SubsystemBase {
   public TalonFX yawMotor = new TalonFX(51);
+  private final ShuffleboardTab odometryTab = Shuffleboard.getTab("Odometry");
+
 
   public Turret() {
     // in init function
@@ -48,14 +53,15 @@ public class Turret extends SubsystemBase {
     motionMagicConfigs.MotionMagicJerk = 10000; // Target jerk of 1600 rps/s/s (0.1 seconds)
 
     yawMotor.getConfigurator().apply(talonFXConfigs);
-    
+
+    yawMotor.setPosition(0/360); 
   }
 
 
   final MotionMagicVoltage motionMagicRequest = new MotionMagicVoltage(0);
   private static final double YAW_DEADBAND_DEG = 0;
   private double lastCommandedYaw = 0.0;
-  
+
   // Rotations of kraken for one rotation of turret
   private double TURRET_GEAR_RATIO = 6.4; // 7.67 for 3d printed turret, 6.4 for comp turret
 
@@ -76,9 +82,9 @@ public class Turret extends SubsystemBase {
     double pointTowardsY = 4.034663;
 
     if (isRedAlliance) {
-      pointTowardsX = 4.625594; // Red
+      pointTowardsX = 11.915394; // Red
     } else {
-      pointTowardsX = 11.915394; // Blue
+      pointTowardsX = 4.625594; // Blue
     }
 
 
@@ -88,9 +94,6 @@ public class Turret extends SubsystemBase {
     double turretYawOffsetRad = Math.atan2(robotOffsetY, robotOffsetX);
     double turretYawOffsetDeg = Math.toDegrees(turretYawOffsetRad);
     double motorYawOffset = turretYawOffsetDeg; 
-    // System.out.println("Motor:" + motorYawOffset);
-    // System.out.println("X: " + robotOffsetX);
-    // System.out.println("Y: " + robotOffsetY);
 
     return motorYawOffset;
   }
@@ -98,9 +101,6 @@ public class Turret extends SubsystemBase {
   public static BooleanSupplier isYawRightAngle(double correctAngle, double currentAngle) {
     return () -> correctAngle == currentAngle;
   }
-  // double kVel = 10.0;
-  // double kAcc = 10.0;
-  // private final SlewRateLimiter yawLimiter = new SlewRateLimiter(240); // deg/sec
 
   private double applyDeadband(double targetDeg) {
     if (Math.abs(targetDeg - lastCommandedYaw) < YAW_DEADBAND_DEG) {
@@ -117,6 +117,8 @@ public class Turret extends SubsystemBase {
     
     double targetAngle = TURRET_GEAR_RATIO * degToRev(normalizeAngle(angleDeg));
 
+    yawMotor.setControl(new MotionMagicExpoVoltage(targetAngle));
+
     // edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints  max = new edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints(kVel, kAcc);
     // TrapezoidProfile limit = new TrapezoidProfile(max);
     // edu.wpi.first.math.trajectory.TrapezoidProfile.State current = new edu.wpi.first.math.trajectory.TrapezoidProfile.State(angleDeg, kVel);
@@ -127,11 +129,11 @@ public class Turret extends SubsystemBase {
 
     //pos = limit.calculate(time,current,targState); //I don't know how to fix this as of 1/30
  
-    yawMotor.setControl(new MotionMagicExpoVoltage(targetAngle));
+    
     // System.out.println("Target Angle in Rev: "+targetAngle);
   }
 
-  public Command setYawCommand(double angleDeg) {
+  public Command setYawCommand(double angleDeg) { // Only used for static angles (0, 90, 180, -90)
     double normalized = normalizeAngle(angleDeg);
 
     double targetAngle = TURRET_GEAR_RATIO * degToRev(normalized);
@@ -139,13 +141,13 @@ public class Turret extends SubsystemBase {
     return run(() -> { yawMotor.setControl(new MotionMagicExpoVoltage(targetAngle)); });
   }
 
-public Command turretClockwise(double speed) {
-  return run(() -> {  } );
-}
+  public Command turretClockwise(double speed) {
+    return run(() -> {  } );
+  }
 
-public Command turretCounterClockwise(double speed) {
-  return run(() -> {  } );
-}
+  public Command turretCounterClockwise(double speed) {
+    return run(() -> {  } );
+  }
 
   @Override
   public void periodic() {
