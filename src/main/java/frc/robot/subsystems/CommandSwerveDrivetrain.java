@@ -228,12 +228,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 rejectUpdate = true;
             }
             
-            if(individualVisionPoseEstimate.tagCount == 0){
+            if(individualVisionPoseEstimate.tagCount < 2){
                 rejectUpdate = true;
             }
 
             if(!rejectUpdate) {
-                setVisionMeasurementStdDevs(VecBuilder.fill(0.1,0.1,Math.toRadians(5)));
+                setVisionMeasurementStdDevs(VecBuilder.fill(.1,.15,Math.toRadians(360)));
                 addVisionMeasurement(individualVisionPoseEstimate.pose, individualVisionPoseEstimate.timestampSeconds);
             }
         }
