@@ -21,6 +21,7 @@ public class LED extends SubsystemBase {
         COLORS.put("orange", {255,165,0});
         COLORS.put("green", {0,255,0});
         COLORS.put("white", {255,255,255});
+        COLORS.put("off", {0,0,0});
     }
     
     public void setColor(int[] color) {
@@ -28,20 +29,29 @@ public class LED extends SubsystemBase {
 
         candle.setLEDs(color[0], color[1], color[2]);
     }
+    
+    public Commands off() {
+        return Commands.run(() -> setColor(COLORS.get("off")))
+    }
 
     public Command red() {
-        return Commands.run(() -> setColor(COLORS.get("red")));
+        return Commands.run(() -> setColor(COLORS.get("red")))
+                       .finallyDo(off());
     }
     public Command blue() {
-        return Commands.run(() -> setColor(COLORS.get("blue")));
+        return Commands.run(() -> setColor(COLORS.get("blue")))
+                       .finallyDo(off());
     }
     public Command orange() {
-        return Commands.run(() -> setColor(COLORS.get("orange")));
+        return Commands.run(() -> setColor(COLORS.get("orange")))
+                       .finallyDo(off());
     }
     public Command green() {
-        return Commands.run(() -> setColor(COLORS.get("green")));
+        return Commands.run(() -> setColor(COLORS.get("green")))
+                       .finallyDo(off());
     }
     public Command white() {
-        return Commands.run(() -> setColor(COLORS.get("white")));
+        return Commands.run(() -> setColor(COLORS.get("white")))
+                       .finallyDo(off());
     }    
 }
