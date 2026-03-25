@@ -99,7 +99,10 @@ public class RobotContainer {
         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
         // LED Commands
-        joystick.y().whileTrue()
+        joystick.y().whileTrue(led.blue());
+        joystick.x().whileTrue(led.red());
+        joystick.a().whileTrue(led.orange());
+        joystick.b().whileTrue(led.green());
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }
