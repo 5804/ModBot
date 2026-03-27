@@ -6,6 +6,8 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.Optional;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.NamedCommands;
@@ -13,6 +15,8 @@ import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -22,33 +26,40 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import java.util.concurrent.TimeUnit;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.LED;
+import frc.robot.HubTracker;
+// import frc.robot.factories.LEDFactory;
 
 public class RobotContainer {
-    private double maxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double maxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
-    private double driveDeadband = 0.14;
-    private double angleDeadband = 0.14;
+    private final double MAX_SPEED = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
+    private final double MAX_ANGULAR_RATE = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+    private final double DRIVE_DEADBAND = 0.14;
+    private final double ANGLE_DEADBAND = 0.14;
+
+    public static Optional<Alliance> alliance = DriverStation.getAlliance();
+    public static boolean isRedAlliance = alliance.get() == Alliance.Red;
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-            .withDeadband(driveDeadband).withRotationalDeadband(angleDeadband) // Add a 10% deadband
+            .withDeadband(DRIVE_DEADBAND).withRotationalDeadband(ANGLE_DEADBAND) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
-    private final Telemetry logger = new Telemetry(maxSpeed);
+    private final Telemetry logger = new Telemetry(MAX_SPEED);
 
     private final CommandXboxController joystick = new CommandXboxController(0);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-    public final LED led = new LED();
+    public final static LED m_led = new LED();
+    public final static HubTracker m_hubTracker = new HubTracker();
 
     private final SendableChooser<Command> autoChooser = new SendableChooser<>();
-        private ShuffleboardTab tab1 = Shuffleboard.getTab("Tab1");
+    private ShuffleboardTab tab1 = Shuffleboard.getTab("Tab1");
 
     public RobotContainer() {
         configureBindings();
@@ -70,9 +81,9 @@ public class RobotContainer {
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-MathUtil.applyDeadband(joystick.getLeftY(), driveDeadband)*maxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-MathUtil.applyDeadband(joystick.getLeftX(), driveDeadband)*maxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-MathUtil.applyDeadband(joystick.getRightX(), angleDeadband)*maxAngularRate) // Drive counterclockwise with negative X (left)
+                drive.withVelocityX(-MathUtil.applyDeadband(joystick.getLeftY(), DRIVE_DEADBAND)*MAX_SPEED) // Drive forward with negative Y (forward)
+                    .withVelocityY(-MathUtil.applyDeadband(joystick.getLeftX(), DRIVE_DEADBAND)*MAX_SPEED) // Drive left with negative X (left)
+                    .withRotationalRate(-MathUtil.applyDeadband(joystick.getRightX(), ANGLE_DEADBAND)*MAX_ANGULAR_RATE) // Drive counterclockwise with negative X (left)
             )
         );
 
@@ -82,11 +93,6 @@ public class RobotContainer {
         RobotModeTriggers.disabled().whileTrue(
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
-
-        joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        joystick.b().whileTrue(drivetrain.applyRequest(() ->
-            point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
-        ));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
@@ -99,10 +105,9 @@ public class RobotContainer {
         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
         // LED Commands
-        joystick.y().whileTrue(led.blue());
-        joystick.x().whileTrue(led.red());
-        joystick.a().whileTrue(led.orange());
-        joystick.b().whileTrue(led.green());
+        joystick.a().whileTrue(m_led.blinkRed()).whileFalse(m_led.off());
+        joystick.y().whileTrue(m_led.blinkBlue()).whileFalse(m_led.off());
+        joystick.x().whileTrue(m_led.blinkMagenta()).whileFalse(m_led.off());
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }
