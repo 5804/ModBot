@@ -4,6 +4,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.util.Color;
+import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import java.util.*;
@@ -23,80 +25,74 @@ public class LED extends SubsystemBase {
         candle = new CANdle(61);
         NUM_LEDS = 8;
         BLINKING_FREQUENCY = 2.5; // Hz (amount of times turned on per second)
-
-        COLORS = new HashMap<>();
-        COLORS.put("red", new int[] {255,0,0});
-        COLORS.put("blue", new int[] {0,0,255});
-        COLORS.put("magenta", new int[] {255,0,255});
-        COLORS.put("yellow", new int[] {255,255,0});
-        COLORS.put("off", new int[] {0,0,0});
     }
     
-    public void setColor(int[] color) {
+    public void setColor(Color color) {
         SolidColor colorRequest = new SolidColor(0, NUM_LEDS-1);
 
-        colorRequest = colorRequest.withColor(new RGBWColor(color[0], color[1], color[2]));
+        colorRequest = colorRequest.withColor(ColorRGBW.getColor(color));
 
         candle.setControl(colorRequest);
     }
 
-    public void setStrobeAnimation(int[] color, double frequency) {
+    public void setStrobeAnimation(Color color, double frequency) {
         StrobeAnimation animationRequest = new StrobeAnimation(0, NUM_LEDS-1);
 
-        animationRequest = animationRequest.withColor(new RGBWColor(color[0], color[1], color[2]));
+        animationRequest = animationRequest.withColor(ColorRGBW.getColor(color));
         animationRequest = animationRequest.withFrameRate(frequency);
 
         candle.setControl(animationRequest);
     }
     
     public Command off() {
-        int[] off = COLORS.get("off");
         return Commands.runOnce(() -> {
-            setColor(off);
-            setStrobeAnimation(off, 0);
+            setColor(Color.kBlack);
+            setStrobeAnimation(Color.kBlack, 0);
         });
     }
     
     public Command solidAlliance(Alliance alliance) {
-        int[] red = COLORS.get("red");
-        int[] blue = COLORS.get("blue");
-
         switch (alliance) {
             case Red:
-                return Commands.runOnce(() -> setColor(red));
+                return Commands.runOnce(() -> setColor(Color.kRed));
             case Blue:
-                return Commands.runOnce(() -> setColor(blue));
+                return Commands.runOnce(() -> setColor(Color.kBlue));
             default:
                 return Commands.runOnce(() -> {});
         }
     }
     public Command solidMagenta() {
-        return Commands.runOnce(() -> setColor(COLORS.get("magenta")));
+        return Commands.runOnce(() -> setColor(Color.kMagenta));
     } 
 
     public Command blinkAlliance(Alliance alliance) {
-        int[] red = COLORS.get("red");
-        int[] blue = COLORS.get("blue");
-
         switch (alliance) {
             case Red:
-                return Commands.runOnce(() -> setStrobeAnimation(red, BLINKING_FREQUENCY));
+                return Commands.runOnce(() -> setStrobeAnimation(Color.kRed, BLINKING_FREQUENCY));
             case Blue:
-                return Commands.runOnce(() -> setStrobeAnimation(blue, BLINKING_FREQUENCY));
+                return Commands.runOnce(() -> setStrobeAnimation(Color.kBlue, BLINKING_FREQUENCY));
             default:
                 return Commands.runOnce(() -> {});
         }
     }
     public Command blinkMagenta() {
-        int[] magenta = COLORS.get("magenta");
-        return Commands.runOnce(() -> setStrobeAnimation(magenta, BLINKING_FREQUENCY));
+        return Commands.runOnce(() -> setStrobeAnimation(Color.kMagenta, BLINKING_FREQUENCY));
     }
     public Command blinkYellow(double frequency) {
-        int[] yellow = COLORS.get("yellow");
-        return Commands.runOnce(() -> setStrobeAnimation(yellow, frequency));
+        return Commands.runOnce(() -> setStrobeAnimation(Color.kYellow, frequency));
     }
     
     public void periodic() {
         
+    }
+
+    public static class ColorRGBW extends Color {
+        public ColorRGBW(){
+            super();
+        }
+
+        public static RGBWColor getColor(Color c){
+            return new RGBWColor((int) c.red*255, (int) c.green*255, (int) c.blue*255);
+        }
     }
 }
