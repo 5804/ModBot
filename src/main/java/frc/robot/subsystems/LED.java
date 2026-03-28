@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -11,29 +12,23 @@ import com.ctre.phoenix6.controls.SolidColor;
 import com.ctre.phoenix6.hardware.CANdle;
 import com.ctre.phoenix6.signals.RGBWColor;
 import com.ctre.phoenix6.controls.StrobeAnimation;
-
-import frc.robot.HubTracker;
-import frc.robot.RobotContainer;
  
 public class LED extends SubsystemBase {
     HashMap<String, int[]> COLORS;
     private final CANdle candle;
-    int NUM_LEDS;
-    double BLINKING_FREQUENCY;
+    final int NUM_LEDS;
+    final double BLINKING_FREQUENCY;
     
     public LED() {
         candle = new CANdle(61);
         NUM_LEDS = 8;
-        BLINKING_FREQUENCY = 2.5; // Hz
-
+        BLINKING_FREQUENCY = 2.5; // Hz (amount of times turned on per second)
 
         COLORS = new HashMap<>();
         COLORS.put("red", new int[] {255,0,0});
         COLORS.put("blue", new int[] {0,0,255});
         COLORS.put("magenta", new int[] {255,0,255});
-        COLORS.put("orange", new int[] {255,165,0});
-        COLORS.put("green", new int[] {0,255,0});
-        COLORS.put("white", new int[] {255,255,255});
+        COLORS.put("yellow", new int[] {255,255,0});
         COLORS.put("off", new int[] {0,0,0});
     }
     
@@ -62,36 +57,43 @@ public class LED extends SubsystemBase {
         });
     }
     
-    public Command red() {
-        return Commands.runOnce(() -> setColor(COLORS.get("red")));
-    }
-    public Command blue() {
-        return Commands.runOnce(() -> setColor(COLORS.get("blue")));
-    }
-    public Command magenta() {
-        return Commands.runOnce(() -> setColor(COLORS.get("magenta")));
-    }
-    public Command orange() {
-        return Commands.runOnce(() -> setColor(COLORS.get("orange")));
-    }
-    public Command green() {
-        return Commands.runOnce(() -> setColor(COLORS.get("green")));
-    }
-    public Command white() {
-        return Commands.runOnce(() -> setColor(COLORS.get("white")));
-    }    
-
-    public Command blinkBlue() {
-        int[] blue = COLORS.get("blue");
-        return Commands.runOnce(() -> setStrobeAnimation(blue, BLINKING_FREQUENCY));
-    }
-    public Command blinkRed() {
+    public Command solidAlliance(Alliance alliance) {
         int[] red = COLORS.get("red");
-        return Commands.runOnce(() -> setStrobeAnimation(red, BLINKING_FREQUENCY));
+        int[] blue = COLORS.get("blue");
+
+        switch (alliance) {
+            case Red:
+                return Commands.runOnce(() -> setColor(red));
+            case Blue:
+                return Commands.runOnce(() -> setColor(blue));
+            default:
+                return Commands.runOnce(() -> {});
+        }
+    }
+    public Command solidMagenta() {
+        return Commands.runOnce(() -> setColor(COLORS.get("magenta")));
+    } 
+
+    public Command blinkAlliance(Alliance alliance) {
+        int[] red = COLORS.get("red");
+        int[] blue = COLORS.get("blue");
+
+        switch (alliance) {
+            case Red:
+                return Commands.runOnce(() -> setStrobeAnimation(red, BLINKING_FREQUENCY));
+            case Blue:
+                return Commands.runOnce(() -> setStrobeAnimation(blue, BLINKING_FREQUENCY));
+            default:
+                return Commands.runOnce(() -> {});
+        }
     }
     public Command blinkMagenta() {
         int[] magenta = COLORS.get("magenta");
         return Commands.runOnce(() -> setStrobeAnimation(magenta, BLINKING_FREQUENCY));
+    }
+    public Command blinkYellow(double frequency) {
+        int[] yellow = COLORS.get("yellow");
+        return Commands.runOnce(() -> setStrobeAnimation(yellow, frequency));
     }
     
     public void periodic() {
