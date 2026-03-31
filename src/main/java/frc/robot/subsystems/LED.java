@@ -1,23 +1,16 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.units.measure.Frequency;
-import edu.wpi.first.wpilibj.DriverStation;
+import frc.robot.HubTracker;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.util.Color;
-import edu.wpi.first.wpilibj.util.Color8Bit;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
-import java.util.*;
-
 import com.ctre.phoenix6.controls.SolidColor;
 import com.ctre.phoenix6.hardware.CANdle;
 import com.ctre.phoenix6.signals.RGBWColor;
 import com.ctre.phoenix6.controls.StrobeAnimation;
  
 public class LED extends SubsystemBase {
-    HashMap<String, int[]> COLORS;
-    private final CANdle candle;
+    final CANdle candle;
     final int NUM_LEDS;
     final double BLINKING_FREQUENCY;
     
@@ -34,7 +27,6 @@ public class LED extends SubsystemBase {
 
         candle.setControl(colorRequest);
     }
-
     public void setStrobeAnimation(Color color, double frequency) {
         StrobeAnimation animationRequest = new StrobeAnimation(0, NUM_LEDS-1);
 
@@ -44,46 +36,74 @@ public class LED extends SubsystemBase {
         candle.setControl(animationRequest);
     }
     
-    public Command off() {
-        return Commands.runOnce(() -> {
-            setColor(Color.kBlack);
-            setStrobeAnimation(Color.kBlack, 0);
-        });
+    public void off() {
+        setColor(Color.kBlack);
+        setStrobeAnimation(Color.kBlack, 0);
     }
     
-    public Command solidAlliance(Alliance alliance) {
+    public void solidAlliance(Alliance alliance) {
         switch (alliance) {
-            case Red:
-                return Commands.runOnce(() -> setColor(Color.kRed));
-            case Blue:
-                return Commands.runOnce(() -> setColor(Color.kBlue));
-            default:
-                return Commands.runOnce(() -> {});
+            case Red -> setColor(Color.kRed);
+            case Blue -> setColor(Color.kBlue);
         }
     }
-    public Command solidMagenta() {
-        return Commands.runOnce(() -> setColor(Color.kMagenta));
+    public void solidMagenta() {
+        setColor(Color.kMagenta);
     } 
 
-    public Command blinkAlliance(Alliance alliance) {
+    public void blinkAlliance(Alliance alliance) {
         switch (alliance) {
-            case Red:
-                return Commands.runOnce(() -> setStrobeAnimation(Color.kRed, BLINKING_FREQUENCY));
-            case Blue:
-                return Commands.runOnce(() -> setStrobeAnimation(Color.kBlue, BLINKING_FREQUENCY));
-            default:
-                return Commands.runOnce(() -> {});
+            case Red -> setStrobeAnimation(Color.kRed, BLINKING_FREQUENCY);
+            case Blue -> setStrobeAnimation(Color.kBlue, BLINKING_FREQUENCY);
         }
     }
-    public Command blinkMagenta() {
-        return Commands.runOnce(() -> setStrobeAnimation(Color.kMagenta, BLINKING_FREQUENCY));
+    public void blinkMagenta() {
+        setStrobeAnimation(Color.kMagenta, BLINKING_FREQUENCY);
     }
-    public Command blinkYellow(double frequency) {
-        return Commands.runOnce(() -> setStrobeAnimation(Color.kYellow, frequency));
+    public void blinkYellow(double frequency) {
+        setStrobeAnimation(Color.kYellow, frequency);
     }
-    
-    public void periodic() {
-        
+
+    Alliance autoWinner = null;
+    Alliance autoLoser = null;
+    public void changeLED() {
+        // LED Commands
+        switch (currentHubShift) {
+            case AUTO -> solidMagenta();
+            
+            case TRANSITION -> {
+                autoWinner = HubTracker.getAutoWinner().get(); // Only update the auto winner and loser when it is actually necessary
+                autoLoser = (autoWinner == Alliance.Red) ? Alliance.Blue : Alliance.Red;
+                solidMagenta();
+            }
+            case TRANSITION_BLINK -> blinkAlliance(autoLoser);
+
+            case SHIFT_1 -> solidAlliance(autoLoser); // Auto loser hub active
+            case SHIFT_1_BLINK -> blinkAlliance(autoWinner);
+
+            case SHIFT_2 -> solidAlliance(autoWinner); // Auto winner hub active
+            case SHIFT_2_BLINK -> blinkAlliance(autoLoser);
+
+            case SHIFT_3 -> solidAlliance(autoLoser);
+            case SHIFT_3_BLINK -> blinkAlliance(autoWinner);
+
+            case SHIFT_4 -> solidAlliance(autoWinner);
+            case SHIFT_4_BLINK -> blinkMagenta();
+
+            case ENDGAME -> solidMagenta(); // Blinking yellow faster as endgame progresses
+            case ENDGAME_BLINK_1 -> blinkYellow(1);
+            case ENDGAME_BLINK_2 -> blinkYellow(2);
+            case ENDGAME_BLINK_3 -> blinkYellow(4);
+        }
+    }
+
+    HubTracker.Shift currentHubShift = HubTracker.getCurrentShift().get();
+    public void periodic() { 
+        HubTracker.Shift initialHubShift = HubTracker.getCurrentShift().get();
+        if (currentHubShift != initialHubShift) { // Only changes LED when the shift changes
+            changeLED();
+            currentHubShift = initialHubShift;
+        }
     }
 
     public static class ColorRGBW extends Color {

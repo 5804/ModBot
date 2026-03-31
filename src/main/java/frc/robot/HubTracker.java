@@ -160,12 +160,20 @@ public class HubTracker {
      */
     public enum Shift {
         AUTO(0, 20, ActiveType.BOTH),
-        TRANSITION(20, 30, ActiveType.BOTH),
-        SHIFT_1(30, 55, ActiveType.AUTO_LOSER),
-        SHIFT_2(55, 80, ActiveType.AUTO_WINNER),
-        SHIFT_3(80, 105, ActiveType.AUTO_LOSER),
-        SHIFT_4(105, 130, ActiveType.AUTO_WINNER),
-        ENDGAME(130, 160, ActiveType.BOTH);
+        TRANSITION(20, 25, ActiveType.BOTH),
+        TRANSITION_BLINK(25, 30, ActiveType.BOTH), // Added
+        SHIFT_1(30, 50, ActiveType.AUTO_LOSER),
+        SHIFT_1_BLINK(50, 55, ActiveType.AUTO_LOSER), // Added
+        SHIFT_2(55, 75, ActiveType.AUTO_WINNER),
+        SHIFT_2_BLINK(75, 80, ActiveType.AUTO_WINNER), // Added
+        SHIFT_3(80, 100, ActiveType.AUTO_LOSER),
+        SHIFT_3_BLINK(100, 105, ActiveType.AUTO_LOSER), // Added
+        SHIFT_4(105, 125, ActiveType.AUTO_WINNER),
+        SHIFT_4_BLINK(125, 130, ActiveType.AUTO_WINNER), // Added
+        ENDGAME(130, 140, ActiveType.BOTH),
+        ENDGAME_BLINK_1(140, 150, ActiveType.BOTH), // Added
+        ENDGAME_BLINK_2(150, 155, ActiveType.BOTH), // Added
+        ENDGAME_BLINK_3(155, 160, ActiveType.AUTO_LOSER); // Added       
 
         final int startTime;
         final int endTime;
