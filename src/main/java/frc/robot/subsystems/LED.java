@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.HubTracker;
+import frc.robot.HubTracker.Shift;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.util.Color;
 import com.ctre.phoenix6.controls.SolidColor;
@@ -13,11 +14,13 @@ public class LED extends SubsystemBase {
     final CANdle candle;
     final int NUM_LEDS;
     final double BLINKING_FREQUENCY;
+    public static HubTracker.Shift currentSimulatedHubShift; // Used for testing, cycled manually
     
     public LED() {
         candle = new CANdle(61);
         NUM_LEDS = 8;
         BLINKING_FREQUENCY = 2.5; // Hz (amount of times turned on per second)
+        currentSimulatedHubShift = Shift.AUTO;
     }
     
     public void setColor(Color color) {
@@ -97,9 +100,22 @@ public class LED extends SubsystemBase {
         }
     }
 
-    HubTracker.Shift currentHubShift = HubTracker.getCurrentShift().get();
+    int shiftIndex = 0;
+    HubTracker.Shift[] shifts = HubTracker.Shift.values();
+    public void cycleHubShift() {
+        if (shiftIndex < 14) {
+            shiftIndex++;
+        } else {
+            shiftIndex = 0;
+        }
+        currentSimulatedHubShift = shifts[shiftIndex];
+    }
+
+    // HubTracker.Shift currentHubShift = HubTracker.getCurrentShift().get(); // Real match
+    HubTracker.Shift currentHubShift = currentSimulatedHubShift; // Testing
+
     public void periodic() { 
-        HubTracker.Shift initialHubShift = HubTracker.getCurrentShift().get();
+        HubTracker.Shift initialHubShift = currentSimulatedHubShift;
         if (currentHubShift != initialHubShift) { // Only changes LED when the shift changes
             changeLED();
             currentHubShift = initialHubShift;

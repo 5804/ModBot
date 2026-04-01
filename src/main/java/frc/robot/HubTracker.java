@@ -150,12 +150,20 @@ public class HubTracker {
      * <h4>Values:</h4>
      * <ul>
      * <li>{@link Shift#AUTO}</li> (0-20 sec)
-     * <li>{@link Shift#TRANSITION}</li> (20-30 sec)
-     * <li>{@link Shift#SHIFT_1}</li> (30-55 sec)
-     * <li>{@link Shift#SHIFT_2}</li> (55-80 sec)
-     * <li>{@link Shift#SHIFT_3}</li> (80-105 sec)
-     * <li>{@link Shift#SHIFT_4}</li> (105-130 sec)
-     * <li>{@link Shift#ENDGAME}</li> (130-160 sec)
+     * <li>{@link Shift#TRANSITION}</li> (20-25 sec)
+     * * <li>{@link Shift#TRANSITION_BLINK}</li> (25-30 sec)
+     * <li>{@link Shift#SHIFT_1}</li> (30-50 sec)
+     * * <li>{@link Shift#SHIFT_1_BLINK}</li> (50-55 sec)
+     * <li>{@link Shift#SHIFT_2}</li> (55-75 sec)
+     * * <li>{@link Shift#SHIFT_2_BLINK}</li> (75-80 sec)
+     * <li>{@link Shift#SHIFT_3}</li> (80-100 sec)
+     * * <li>{@link Shift#SHIFT_3_BLINK}</li> (100-105 sec)
+     * <li>{@link Shift#SHIFT_4}</li> (105-125 sec)
+     * * <li>{@link Shift#SHIFT_4_BLINK}</li> (125-130 sec)
+     * <li>{@link Shift#ENDGAME}</li> (130-140 sec)
+     * * <li>{@link Shift#ENDGAME_BLINK_1}</li> (140-150 sec)
+     * * <li>{@link Shift#ENDGAME_BLINK_2}</li> (150-155 sec)
+     * * <li>{@link Shift#ENDGAME_BLINK_3}</li> (155-160 sec)
      * </ul>
      */
     public enum Shift {
