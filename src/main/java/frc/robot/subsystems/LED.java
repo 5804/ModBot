@@ -5,6 +5,7 @@ import frc.robot.HubTracker;
 import frc.robot.RobotContainer;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.util.Color;
+import frc.robot.subsystems.DriveSubsystem;
 
 import java.security.AllPermission;
 
@@ -19,12 +20,14 @@ public class LED extends SubsystemBase {
     final int NUM_LEDS;
     final double BLINKING_FREQUENCY;
     final Alliance ALLIANCE;
+    public boolean isClimbing;
     // Used for testing, cycled manually
     public static HubTracker.Shift currentSimulatedHubShift = HubTracker.Shift.AUTO;
     public static Alliance simulatedAutoWinner = Alliance.Blue;
     
     public LED() {
         candle = new CANdle(61);
+
         CANdleConfiguration config = new CANdleConfiguration();
         config.CANdleFeatures.Enable5VRail = Enable5VRailValue.Enabled;
         config.LED.StripType = StripTypeValue.GRB;
@@ -35,8 +38,39 @@ public class LED extends SubsystemBase {
         NUM_LEDS = 180;
         BLINKING_FREQUENCY = 2.5; // Hz (amount of times turned on per second)
         ALLIANCE = RobotContainer.alliance.get();
+        isClimbing = false;
     }
     
+    public int getNumLitLEDs() {
+        return (int) (Math.abs(DriveSubsystem.getPitch()/0.5));
+    }
+
+    public void setColorClimb() {
+        candle.clearAllAnimations();
+
+        int numLitLEDs = getNumLitLEDs();
+
+        System.out.println("Pitch: " + DriveSubsystem.getPitch());
+        System.out.println("Heading: " + DriveSubsystem.getHeading());
+        System.out.println("NumLitLEDs: " + numLitLEDs);
+
+        SolidColor colorRequestOn = new SolidColor(0, numLitLEDs-1);
+        SolidColor colorRequestOff = new SolidColor(numLitLEDs-1, NUM_LEDS-1);
+        colorRequestOn = colorRequestOn.withColor(ColorRGBW.getColor(Color.kMagenta));
+        colorRequestOff = colorRequestOff.withColor(ColorRGBW.getColor(Color.kOrangeRed));
+
+
+        candle.setControl(colorRequestOn);
+        candle.setControl(colorRequestOff);
+
+    }
+    public void startClimbing() {
+        isClimbing = true;
+    }
+    public void stopClimbing() {
+        isClimbing = false;
+    }
+
     public void setColor(Color color) {
         candle.clearAllAnimations();
 
@@ -109,7 +143,7 @@ public class LED extends SubsystemBase {
     public void changeLED(HubTracker.Shift hubShift) {
         switch (hubShift) {
             case AUTO -> solidBoth();
-            
+
             case TRANSITION -> {
                 // autoWinner = HubTracker.getAutoWinner().get(); // Only update the auto winner and loser when it is actually necessary
                 autoWinner = simulatedAutoWinner;
@@ -153,6 +187,10 @@ public class LED extends SubsystemBase {
     HubTracker.Shift currentHubShift = currentSimulatedHubShift; // Testing
 
     public void periodic() { 
+        if (isClimbing) {
+            setColorClimb();
+        }
+
         HubTracker.Shift initialHubShift = currentSimulatedHubShift;
         if (currentHubShift != initialHubShift) { // Only changes LED when the shift changes
             currentHubShift = initialHubShift;

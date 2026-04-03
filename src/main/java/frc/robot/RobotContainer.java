@@ -105,7 +105,7 @@ public class RobotContainer {
         joystick.a().onTrue(Commands.runOnce(() -> m_led.cycleHubShift()));
         joystick.b().onTrue(Commands.runOnce(() -> m_led.rainbow()));
         joystick.y().onTrue(Commands.runOnce(() -> m_led.fire()));
-        joystick.x().onTrue(Commands.runOnce(() -> m_led.off()));
+        joystick.x().whileTrue(Commands.runOnce(() -> m_led.startClimbing())).whileFalse(Commands.runOnce(() -> m_led.stopClimbing()));
         // joystick.a().onTrue(Commands.run(() -> m_led.blinkAlliance(Alliance.Blue), m_led));
         // joystick.y().onTrue(Commands.run(() -> m_led.off(), m_led));
         // joystick.b().onTrue(Commands.run(() -> m_led.blinkAlliance(Alliance.Red), m_led));
