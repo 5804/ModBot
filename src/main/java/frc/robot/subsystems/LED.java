@@ -2,37 +2,48 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.HubTracker;
-import frc.robot.HubTracker.Shift;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.util.Color;
+
+import java.security.AllPermission;
+
 import com.ctre.phoenix6.controls.SolidColor;
 import com.ctre.phoenix6.hardware.CANdle;
-import com.ctre.phoenix6.signals.RGBWColor;
+import com.ctre.phoenix6.configs.*;
+import com.ctre.phoenix6.signals.*;
 import com.ctre.phoenix6.controls.StrobeAnimation;
  
 public class LED extends SubsystemBase {
     final CANdle candle;
     final int NUM_LEDS;
     final double BLINKING_FREQUENCY;
-    public static HubTracker.Shift currentSimulatedHubShift; // Used for testing, cycled manually
+    // Used for testing, cycled manually
+    public static HubTracker.Shift currentSimulatedHubShift = HubTracker.Shift.AUTO;
+    public static Alliance simulatedAutoWinner = Alliance.Blue;
     
     public LED() {
         candle = new CANdle(61);
-        NUM_LEDS = 8;
+        CANdleConfiguration config = new CANdleConfiguration();
+        config.CANdleFeatures.Enable5VRail = Enable5VRailValue.Enabled;
+        config.LED.StripType = StripTypeValue.GRB;
+        config.LED.BrightnessScalar = 0.75;
+        config.CANdleFeatures.VBatOutputMode = VBatOutputModeValue.Modulated;
+        candle.getConfigurator().apply(config);
+
+        NUM_LEDS = 10;
         BLINKING_FREQUENCY = 2.5; // Hz (amount of times turned on per second)
-        currentSimulatedHubShift = Shift.AUTO;
     }
     
     public void setColor(Color color) {
-        SolidColor colorRequest = new SolidColor(0, NUM_LEDS-1);
+        candle.clearAllAnimations();
 
+        SolidColor colorRequest = new SolidColor(0, NUM_LEDS-1);
         colorRequest = colorRequest.withColor(ColorRGBW.getColor(color));
 
         candle.setControl(colorRequest);
     }
     public void setStrobeAnimation(Color color, double frequency) {
         StrobeAnimation animationRequest = new StrobeAnimation(0, NUM_LEDS-1);
-
         animationRequest = animationRequest.withColor(ColorRGBW.getColor(color));
         animationRequest = animationRequest.withFrameRate(frequency);
 
@@ -69,13 +80,13 @@ public class LED extends SubsystemBase {
 
     Alliance autoWinner = null;
     Alliance autoLoser = null;
-    public void changeLED() {
-        // LED Commands
-        switch (currentHubShift) {
+    public void changeLED(HubTracker.Shift hubShift) {
+        switch (hubShift) {
             case AUTO -> solidMagenta();
             
             case TRANSITION -> {
-                autoWinner = HubTracker.getAutoWinner().get(); // Only update the auto winner and loser when it is actually necessary
+                // autoWinner = HubTracker.getAutoWinner().get(); // Only update the auto winner and loser when it is actually necessary
+                autoWinner = simulatedAutoWinner;
                 autoLoser = (autoWinner == Alliance.Red) ? Alliance.Blue : Alliance.Red;
                 solidMagenta();
             }
@@ -109,16 +120,18 @@ public class LED extends SubsystemBase {
             shiftIndex = 0;
         }
         currentSimulatedHubShift = shifts[shiftIndex];
+        System.out.println(currentSimulatedHubShift);
     }
 
     // HubTracker.Shift currentHubShift = HubTracker.getCurrentShift().get(); // Real match
     HubTracker.Shift currentHubShift = currentSimulatedHubShift; // Testing
 
     public void periodic() { 
+        System.out.println("CANdle Voltage: " + candle.getFiveVRailVoltage().getValue());
         HubTracker.Shift initialHubShift = currentSimulatedHubShift;
         if (currentHubShift != initialHubShift) { // Only changes LED when the shift changes
-            changeLED();
             currentHubShift = initialHubShift;
+            changeLED(currentHubShift);
         }
     }
 

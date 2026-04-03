@@ -102,7 +102,12 @@ public class RobotContainer {
         // Reset the field-centric heading on left bumper press.
         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-        joystick.a().onTrue(Commands.run(() -> m_led.cycleHubShift()));
+        joystick.a().onTrue(Commands.runOnce(() -> m_led.cycleHubShift()));
+        joystick.b().onTrue(Commands.runOnce(() -> m_led.changeLED(LED.currentSimulatedHubShift)));
+        // joystick.a().onTrue(Commands.run(() -> m_led.blinkAlliance(Alliance.Blue), m_led));
+        // joystick.y().onTrue(Commands.run(() -> m_led.off(), m_led));
+        // joystick.b().onTrue(Commands.run(() -> m_led.blinkAlliance(Alliance.Red), m_led));
+
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }
