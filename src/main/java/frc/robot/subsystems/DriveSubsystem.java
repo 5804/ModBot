@@ -175,6 +175,13 @@ public class DriveSubsystem extends SubsystemBase {
   public static double getPitch() {
     return m_gyro.getPitch().getValueAsDouble();
   }
+  public static double getPitchRot3d() {
+    return m_gyro.getRotation3d().getY() * (360/(2*Math.PI));
+  }
+  public static double getRoll() {
+    return m_gyro.getRoll().getValueAsDouble();
+  }
+
 
   /**
    * Returns the turn rate of the robot.
